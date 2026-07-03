@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import hero from "@/assets/pousada-hero.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
-const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
+const logoUrl = "/logo.png";
+const loginHeroUrl = "/imagem-tela-longi.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -43,10 +43,10 @@ function AuthPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:block relative overflow-hidden">
-        <img src={hero} alt="Pousada Lusitânia" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={loginHeroUrl} alt="Pousada Lusitânia" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-hero opacity-70" />
         <div className="relative z-10 flex flex-col justify-between h-full p-10 text-primary-foreground">
-          <img src={logoUrl} alt="Pousada Lusitânia" className="h-20 w-auto rounded-xl bg-white/8 p-2 backdrop-blur-sm" />
+          <div />
           <div>
             <h1 className="font-serif text-5xl leading-tight">
               A tranquilidade das montanhas,<br />o conforto do lar.
@@ -61,8 +61,8 @@ function AuthPage() {
       <div className="flex items-center justify-center p-6 bg-background">
         <Card className="w-full max-w-md shadow-elegant border-border/60">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 h-14 w-40 rounded-lg bg-primary/5 grid place-items-center px-3">
-              <img src={logoUrl} alt="" className="h-10 w-full object-contain" />
+            <div className="mx-auto mb-4 h-20 w-56 overflow-hidden rounded-xl bg-primary/5">
+              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
             </div>
             <CardTitle className="font-serif text-2xl">Entrar no sistema</CardTitle>
             <p className="text-sm text-muted-foreground">Acesso interno da Pousada Lusitânia</p>

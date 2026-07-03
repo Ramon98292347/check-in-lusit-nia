@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BedDouble, ClipboardList, LockKeyhole } from "lucide-react";
 
-const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
+const logoUrl = "/logo.png";
 
 export const Route = createFileRoute("/")({
   component: Index,

@@ -13,12 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
-import hero from "@/assets/pousada-hero.jpg";
 import { enqueueOfflinePrecCadastro, getOfflinePrecCadastroCount, notifyBrowser, removeOfflinePrecCadastro, submitPrecCadastroOnline } from "@/utils/offlinePrecCadastro";
 import { payloadEventoHospedagem } from "@/utils/payloads";
 import { enviarEventoHospedagem } from "@/services/webhooksService";
 
-const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
+const logoUrl = "/logo.png";
+const cadastroHeroUrl = "/fundo-cadstro.png";
 
 export const Route = createFileRoute("/precadastro")({
   component: PreCadastroPublico,
@@ -234,10 +234,12 @@ function PreCadastroPublico() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="relative h-56 md:h-64 overflow-hidden">
-        <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={cadastroHeroUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-hero opacity-75" />
         <div className="relative z-10 h-full max-w-3xl mx-auto px-6 flex items-center gap-4">
-          <img src={logoUrl} alt="Pousada Lusitânia" className="h-16 w-auto rounded-xl bg-white/8 p-2 backdrop-blur-sm" />
+          <div className="h-16 w-44 overflow-hidden rounded-xl bg-white/8 backdrop-blur-sm">
+            <img src={logoUrl} alt="Pousada Lusitânia" className="h-full w-full object-cover" />
+          </div>
           <div className="text-primary-foreground">
             <h1 className="font-serif text-2xl md:text-3xl">Ficha de Hóspede</h1>
             <p className="text-sm text-white/85">Preencha seu pré-cadastro antes da chegada</p>
@@ -253,11 +255,6 @@ function PreCadastroPublico() {
             </CardContent>
           </Card>
         )}
-        <div className="flex justify-start">
-          <Button asChild type="button" variant="outline">
-            <Link to="/">Voltar</Link>
-          </Button>
-        </div>
         <Card className="shadow-elegant">
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">

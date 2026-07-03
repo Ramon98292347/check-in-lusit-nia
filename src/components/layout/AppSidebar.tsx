@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 
-const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
+const logoUrl = "/logo.png";
 
 const items = [
   { title: "Painel", url: "/painel", icon: LayoutDashboard },
@@ -45,8 +45,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-3">
         <div className="flex items-center gap-2">
-          <div className="grid h-10 w-16 shrink-0 place-items-center rounded-lg bg-sidebar-primary/10 overflow-hidden">
-            <img src={logoUrl} alt="Pousada Lusitânia" className="h-10 w-full object-contain" />
+          <div className="h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-sidebar-primary/10">
+            <img src={logoUrl} alt="Pousada Lusitânia" className="h-full w-full object-cover" />
           </div>
           {!collapsed && (
             <div className="min-w-0">

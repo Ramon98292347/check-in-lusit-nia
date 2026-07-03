@@ -1,6 +1,6 @@
 import { formatDate, formatCPF, formatPhone } from "./formatters";
 
-const SYSTEM_LOGO_PATH = "/Captura%20de%20tela%202026-07-03%20124733.png";
+const SYSTEM_LOGO_PATH = "/logo.png";
 
 function getPublicAssetUrl(path: string) {
   if (typeof window === "undefined") return path;
