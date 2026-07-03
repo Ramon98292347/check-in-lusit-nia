@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   ClipboardList,
   BedDouble,
-  Home,
-  ShoppingBasket,
   ClipboardCheck,
   FileText,
   Settings,
@@ -23,15 +21,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logo from "@/assets/lusitania-logo.png.asset.json";
 import { useAuth } from "@/hooks/useAuth";
+
+const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
 
 const items = [
   { title: "Painel", url: "/painel", icon: LayoutDashboard },
   { title: "Pré-cadastros", url: "/precadastros", icon: ClipboardList },
   { title: "Hospedagens", url: "/hospedagens", icon: BedDouble },
-  { title: "Acomodações", url: "/acomodacoes", icon: Home },
-  { title: "Produtos de Consumo", url: "/produtos", icon: ShoppingBasket },
   { title: "Vistorias", url: "/vistorias", icon: ClipboardCheck },
   { title: "Documentos", url: "/documentos", icon: FileText },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
@@ -48,8 +45,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-3">
         <div className="flex items-center gap-2">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-sidebar-primary/10 overflow-hidden">
-            <img src={logo.url} alt="Pousada Lusitânia" className="h-10 w-10 object-contain" />
+          <div className="grid h-10 w-16 shrink-0 place-items-center rounded-lg bg-sidebar-primary/10 overflow-hidden">
+            <img src={logoUrl} alt="Pousada Lusitânia" className="h-10 w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -88,7 +85,8 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-2">
         {!collapsed && user && (
           <div className="px-2 pb-2 text-xs text-sidebar-accent-foreground/80">
-            <div className="truncate">{user.email}</div>
+            <div className="truncate font-medium">{user.nome}</div>
+            <div className="truncate opacity-80">{user.username}</div>
             <div className="text-[10px] uppercase tracking-wide opacity-80">
               {role === "administrador" ? "Administrador" : "Funcionário"}
             </div>

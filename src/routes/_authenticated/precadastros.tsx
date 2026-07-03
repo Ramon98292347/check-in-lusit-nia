@@ -13,6 +13,12 @@ export const Route = createFileRoute("/_authenticated/precadastros")({
 
 function PreCadastros() {
   const [rows, setRows] = useState<any[]>([]);
+  const [publicUrl, setPublicUrl] = useState("/precadastro");
+
+  useEffect(() => {
+    setPublicUrl(`${window.location.origin}/precadastro`);
+  }, []);
+
   useEffect(() => {
     supabase
       .from("hospedagens")
@@ -28,6 +34,31 @@ function PreCadastros() {
         <h1 className="font-serif text-3xl">Pré-cadastros</h1>
         <p className="text-muted-foreground text-sm">Fichas recebidas aguardando confirmação</p>
       </div>
+      <Card className="border-border/60 shadow-soft">
+        <CardHeader><CardTitle className="font-serif text-xl">Atalho de cadastro</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Se o hóspede estiver na recepção, o operador pode copiar o link ou abrir o formulário na hora.
+          </p>
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-sm break-all">
+            {publicUrl}
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                await navigator.clipboard.writeText(publicUrl);
+              }}
+            >
+              Copiar link
+            </Button>
+            <Button asChild>
+              <a href={publicUrl} target="_blank" rel="noreferrer">Abrir formulário</a>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader><CardTitle className="text-base">Total: {rows.length}</CardTitle></CardHeader>
         <CardContent className="overflow-x-auto">

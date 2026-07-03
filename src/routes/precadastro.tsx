@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
-import logo from "@/assets/lusitania-logo.png.asset.json";
 import hero from "@/assets/pousada-hero.jpg";
 import { calcQtdDiarias } from "@/utils/calculations";
+
+const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
 
 export const Route = createFileRoute("/precadastro")({
   component: PreCadastroPublico,
@@ -68,7 +69,11 @@ function PreCadastroPublico() {
   const onSubmit = async (values: Form) => {
     setLoading(true);
     try {
-      const { data: hospede, error: e1 } = await supabase.from("hospedes").insert({
+      const hospedeId = crypto.randomUUID();
+      const hospedagemId = crypto.randomUUID();
+
+      const { error: e1 } = await supabase.from("hospedes").insert({
+        id: hospedeId,
         nome: values.nome,
         cpf: values.cpf,
         nascimento: values.nascimento || null,
@@ -79,15 +84,16 @@ function PreCadastroPublico() {
         uf: values.uf?.toUpperCase() || null,
         cep: values.cep || null,
         placa_veiculo: values.placa_veiculo || null,
-      }).select("id").single();
+      });
       if (e1) throw e1;
 
       const acom = acomodacoes.find((a) => a.id === values.acomodacao_id);
       const qtd = calcQtdDiarias(values.checkin, values.checkout);
       const valor_diaria = Number(acom?.valor_diaria || 0);
 
-      const { data: hosp, error: e2 } = await supabase.from("hospedagens").insert({
-        hospede_id: hospede.id,
+      const { error: e2 } = await supabase.from("hospedagens").insert({
+        id: hospedagemId,
+        hospede_id: hospedeId,
         acomodacao_id: values.acomodacao_id,
         checkin: values.checkin,
         checkout: values.checkout,
@@ -100,14 +106,15 @@ function PreCadastroPublico() {
         status: "pre_cadastro",
         origem: "pre_cadastro",
         observacoes: values.observacoes || null,
-      }).select("id").single();
+      });
       if (e2) throw e2;
 
       const acomp = values.acompanhantes.filter((a) => a.nome?.trim());
       if (acomp.length > 0) {
         await supabase.from("acompanhantes").insert(
           acomp.map((a) => ({
-            hospedagem_id: hosp.id,
+            id: crypto.randomUUID(),
+            hospedagem_id: hospedagemId,
             nome: a.nome,
             cpf: a.cpf || null,
             nascimento: a.nascimento || null,
@@ -147,7 +154,7 @@ function PreCadastroPublico() {
         <img src={hero} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-hero opacity-75" />
         <div className="relative z-10 h-full max-w-3xl mx-auto px-6 flex items-center gap-4">
-          <img src={logo.url} alt="Pousada Lusitânia" className="h-14 w-14 rounded-lg bg-white/10 p-1" />
+          <img src={logoUrl} alt="Pousada Lusitânia" className="h-16 w-auto rounded-xl bg-white/8 p-2 backdrop-blur-sm" />
           <div className="text-primary-foreground">
             <h1 className="font-serif text-2xl md:text-3xl">Ficha de Hóspede</h1>
             <p className="text-sm text-white/85">Preencha seu pré-cadastro antes da chegada</p>
@@ -156,6 +163,11 @@ function PreCadastroPublico() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto p-6 space-y-6 -mt-8">
+        <div className="flex justify-start">
+          <Button asChild type="button" variant="outline">
+            <Link to="/">Voltar</Link>
+          </Button>
+        </div>
         <Card className="shadow-elegant">
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">

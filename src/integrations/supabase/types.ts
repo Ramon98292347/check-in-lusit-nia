@@ -477,6 +477,39 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios_internos: {
+        Row: {
+          ativo: boolean | null
+          atualizado_em: string | null
+          criado_em: string | null
+          id: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+          senha_hash: string
+          username: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+          senha_hash: string
+          username: string
+        }
+        Update: {
+          ativo?: boolean | null
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          nome?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          senha_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
       vistorias: {
         Row: {
           acomodacao_id: string | null
@@ -561,6 +594,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validar_login_interno: {
+        Args: {
+          p_password: string
+          p_username: string
+        }
+        Returns: {
+          id: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+          username: string
+        }[]
       }
     }
     Enums: {

@@ -1,3 +1,42 @@
+-- CHECK-IN LUSITANIA
+-- ARQUIVO UNICO PARA SUBIR O BANCO NOVO NO SUPABASE
+--
+-- COMO USAR:
+-- 1. Crie um novo projeto no Supabase.
+-- 2. No painel do Supabase, abra SQL Editor.
+-- 3. Cole e execute TODO este arquivo.
+-- 4. Depois ajuste o arquivo .env deste projeto com os dados do banco novo:
+--
+--    SUPABASE_PROJECT_ID="SEU_PROJECT_ID"
+--    SUPABASE_PUBLISHABLE_KEY="SUA_PUBLISHABLE_KEY"
+--    SUPABASE_URL="https://SEU_PROJECT_ID.supabase.co"
+--    VITE_SUPABASE_PROJECT_ID="SEU_PROJECT_ID"
+--    VITE_SUPABASE_PUBLISHABLE_KEY="SUA_PUBLISHABLE_KEY"
+--    VITE_SUPABASE_URL="https://SEU_PROJECT_ID.supabase.co"
+--
+-- 5. No Supabase, va em Authentication > Providers > Anonymous Sign-Ins e deixe ATIVO.
+--    Isso e obrigatorio porque o login interno do sistema usa signInAnonymously() por tras.
+--
+-- 6. Os usuarios internos padrao ja sao criados neste script:
+--    - recepcao / recepcao123
+--    - vistoria / vistoria123
+--    Depois voce pode trocar direto na tabela public.usuarios_internos.
+--
+-- 7. Se aparecer erro 422 em /auth/v1/signup:
+--    - almost always significa que Anonymous Sign-Ins nao esta ativo.
+--
+-- 8. Depois de ajustar o .env, rode:
+--    npm install
+--    npm run dev
+--
+-- 9. Para gerar build:
+--    npm run build
+--
+-- OBSERVACAO IMPORTANTE:
+-- Este arquivo ja inclui estrutura, policies, triggers e seeds iniciais.
+-- Ele foi preparado para ser mais seguro em um deploy manual, com IF NOT EXISTS,
+-- DROP POLICY IF EXISTS e inserts idempotentes onde necessario.
+
 -- (arquivo de referência do schema completo do Supabase — gerado a partir das migrations)
 
 -- Extensions

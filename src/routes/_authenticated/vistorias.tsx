@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/vistorias")({
 
 function Vistorias() {
   const [rows, setRows] = useState<any[]>([]);
+
   useEffect(() => {
     supabase.from("hospedagens")
       .select("id, checkin, checkout, status, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
@@ -20,12 +21,30 @@ function Vistorias() {
       .order("checkout", { ascending: false })
       .then(({ data }) => setRows(data || []));
   }, []);
+
+  const proximaVistoria = rows.find((row) => ["hospedado", "vistoria_pendente"].includes(row.status));
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-serif text-3xl">Vistorias</h1>
         <p className="text-muted-foreground text-sm">Hospedagens aguardando ou com vistoria realizada</p>
       </div>
+      <Card className="border-border/60 shadow-soft">
+        <CardHeader><CardTitle className="font-serif text-xl">Atalho de vistoria</CardTitle></CardHeader>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Quando precisar agir na hora, use este atalho para abrir rapidamente a próxima vistoria pendente.
+          </p>
+          {proximaVistoria ? (
+            <Button asChild>
+              <Link to="/hospedagens/$id" params={{ id: proximaVistoria.id }}>Abrir próxima vistoria</Link>
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" disabled>Nenhuma vistoria pendente</Button>
+          )}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader><CardTitle className="text-base">Total: {rows.length}</CardTitle></CardHeader>
         <CardContent>

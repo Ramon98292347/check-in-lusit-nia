@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatters";
-import { ClipboardList, LogIn, BedDouble, LogOut, ClipboardCheck, ShoppingBasket, ArrowRight } from "lucide-react";
+import { ClipboardList, LogIn, BedDouble, LogOut, ClipboardCheck, ShoppingBasket, ArrowRight, ExternalLink, SearchCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: Painel,
@@ -74,6 +74,42 @@ function Painel() {
       <div>
         <h1 className="font-serif text-3xl">Painel</h1>
         <p className="text-muted-foreground text-sm">Visão geral de hoje na pousada</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Card className="border-border/60 shadow-soft">
+          <CardContent className="flex items-center justify-between gap-4 pt-6">
+            <div>
+              <div className="text-sm font-medium text-foreground">Cadastro público</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Abra o formulário público para preenchimento do hóspede.
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/precadastro">
+                <ExternalLink className="h-4 w-4" />
+                Abrir cadastro
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 shadow-soft">
+          <CardContent className="flex items-center justify-between gap-4 pt-6">
+            <div>
+              <div className="text-sm font-medium text-foreground">Vistorias</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Acesse rapidamente a lista de hospedagens para vistoria.
+              </p>
+            </div>
+            <Button asChild variant="outline">
+              <Link to="/vistorias">
+                <SearchCheck className="h-4 w-4" />
+                Abrir vistoria
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#17372f" />
+      <stop offset="100%" stop-color="#0f251f" />
+    </linearGradient>
+    <linearGradient id="tail" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#204a88" />
+      <stop offset="100%" stop-color="#d95d50" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)" />
+  <path d="M25 13 C29 6, 36 6, 40 13 C35 14, 31 17, 29 21 C27 18, 25 16, 25 13Z" fill="#e3685c" />
+  <ellipse cx="29" cy="29" rx="10" ry="12" fill="#101614" />
+  <ellipse cx="20" cy="31" rx="5" ry="7" fill="#101614" />
+  <path d="M15 32 L8 29 L14 26 Z" fill="#efc156" />
+  <path d="M32 22 C41 16, 53 21, 54 31 C55 41, 47 47, 39 46 C31 45, 26 39, 26 31 C26 27, 28 24, 32 22Z" fill="url(#tail)" />
+  <path d="M28 41 L26 52 M34 41 L36 52" stroke="#7d86dc" stroke-width="2.5" stroke-linecap="round" />
+  <path d="M24 52 L29 52 M34 52 L39 52" stroke="#cfa93b" stroke-width="2.2" stroke-linecap="round" />
+  <path d="M41 31 C43 27, 48 27, 48 32 C48 36, 44 38, 41 42 C38 38, 34 36, 34 32 C34 27, 39 27, 41 31Z" fill="#f4d15f" />
+  <circle cx="20" cy="29" r="1.4" fill="#f7efe5" />
+</svg>

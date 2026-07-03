@@ -1,27 +1,25 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import logo from "@/assets/lusitania-logo.png.asset.json";
 import hero from "@/assets/pousada-hero.jpg";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+
+const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
 function AuthPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [senha, setSenha] = useState("");
-  const [nome, setNome] = useState("");
-  const [modo, setModo] = useState<"login" | "cadastro">("login");
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, signInLocal } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,24 +30,9 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (modo === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
-        if (error) throw error;
-        toast.success("Bem-vindo(a) de volta!");
-        navigate({ to: "/painel" });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password: senha,
-          options: {
-            data: { nome },
-            emailRedirectTo: `${window.location.origin}/painel`,
-          },
-        });
-        if (error) throw error;
-        toast.success("Conta criada. Verifique seu e-mail para confirmar.");
-        setModo("login");
-      }
+      await signInLocal({ username, password: senha });
+      toast.success("Acesso liberado com sucesso.");
+      navigate({ to: "/painel" });
     } catch (e: any) {
       toast.error(e.message || "Erro ao autenticar");
     } finally {
@@ -63,7 +46,7 @@ function AuthPage() {
         <img src={hero} alt="Pousada Lusitânia" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-hero opacity-70" />
         <div className="relative z-10 flex flex-col justify-between h-full p-10 text-primary-foreground">
-          <img src={logo.url} alt="Pousada Lusitânia" className="h-16 w-16 rounded-lg bg-white/10 p-1" />
+          <img src={logoUrl} alt="Pousada Lusitânia" className="h-20 w-auto rounded-xl bg-white/8 p-2 backdrop-blur-sm" />
           <div>
             <h1 className="font-serif text-5xl leading-tight">
               A tranquilidade das montanhas,<br />o conforto do lar.
@@ -78,25 +61,23 @@ function AuthPage() {
       <div className="flex items-center justify-center p-6 bg-background">
         <Card className="w-full max-w-md shadow-elegant border-border/60">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-3 h-14 w-14 rounded-lg bg-primary/5 grid place-items-center">
-              <img src={logo.url} alt="" className="h-12 w-12 object-contain" />
+            <div className="mx-auto mb-3 h-14 w-40 rounded-lg bg-primary/5 grid place-items-center px-3">
+              <img src={logoUrl} alt="" className="h-10 w-full object-contain" />
             </div>
-            <CardTitle className="font-serif text-2xl">
-              {modo === "login" ? "Entrar no sistema" : "Criar conta"}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Check-in Lusitânia · Pousada Lusitânia</p>
+            <CardTitle className="font-serif text-2xl">Entrar no sistema</CardTitle>
+            <p className="text-sm text-muted-foreground">Acesso interno da Pousada Lusitânia</p>
           </CardHeader>
           <CardContent>
             <form onSubmit={submit} className="space-y-4">
-              {modo === "cadastro" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="nome">Nome</Label>
-                  <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
-                </div>
-              )}
               <div className="space-y-1.5">
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Label htmlFor="username">Usuario</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Digite seu usuario"
+                  required
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="senha">Senha</Label>
@@ -104,14 +85,12 @@ function AuthPage() {
               </div>
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {modo === "login" ? "Entrar" : "Criar conta"}
+                Entrar
               </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                {modo === "login" ? (
-                  <>Não tem conta? <button type="button" onClick={() => setModo("cadastro")} className="text-primary font-medium hover:underline">Cadastre-se</button></>
-                ) : (
-                  <>Já tem conta? <button type="button" onClick={() => setModo("login")} className="text-primary font-medium hover:underline">Entrar</button></>
-                )}
+              <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Acessos internos liberados:</p>
+                <p className="mt-2">Recepcao: usuario `recepcao` e senha `recepcao123`</p>
+                <p>Vistoria: usuario `vistoria` e senha `vistoria123`</p>
               </div>
               <div className="pt-2 text-center">
                 <Link to="/precadastro" className="text-xs text-muted-foreground hover:text-primary">
