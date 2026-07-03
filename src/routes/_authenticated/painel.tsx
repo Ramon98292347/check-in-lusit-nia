@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatters";
-import { ClipboardList, LogIn, BedDouble, LogOut, ClipboardCheck, ShoppingBasket, ArrowRight, ExternalLink, SearchCheck } from "lucide-react";
+import { ClipboardList, LogIn, BedDouble, LogOut, ClipboardCheck, ArrowRight, ExternalLink, SearchCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: Painel,
 });
 
 function Painel() {
-  const [stats, setStats] = useState({ pre: 0, ins: 0, hosp: 0, outs: 0, vist: 0, cons: 0 });
+  const [stats, setStats] = useState({ pre: 0, ins: 0, hosp: 0, outs: 0, vist: 0 });
   const [proximosCheckin, setProximosCheckin] = useState<any[]>([]);
   const [checkoutsHoje, setCheckoutsHoje] = useState<any[]>([]);
   const [vistoriasPend, setVistoriasPend] = useState<any[]>([]);
@@ -21,13 +21,12 @@ function Painel() {
     const hoje = new Date().toISOString().slice(0, 10);
 
     (async () => {
-      const [pre, ins, hosp, outs, vist, cons] = await Promise.all([
+      const [pre, ins, hosp, outs, vist] = await Promise.all([
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("status", "pre_cadastro"),
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("checkin", hoje).in("status", ["pre_cadastro", "checkin_confirmado"]),
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("status", "hospedado"),
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("checkout", hoje).in("status", ["hospedado", "vistoria_pendente", "vistoria_realizada"]),
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).in("status", ["hospedado", "vistoria_pendente"]).lte("checkout", hoje),
-        supabase.from("itens_vistoria").select("id", { count: "exact", head: true }).gte("criado_em", hoje),
       ]);
       setStats({
         pre: pre.count || 0,
@@ -35,7 +34,6 @@ function Painel() {
         hosp: hosp.count || 0,
         outs: outs.count || 0,
         vist: vist.count || 0,
-        cons: cons.count || 0,
       });
 
       const { data: proximos } = await supabase
@@ -66,7 +64,6 @@ function Painel() {
     { label: "Hóspedes hospedados", value: stats.hosp, icon: BedDouble, color: "text-forest" },
     { label: "Check-outs de hoje", value: stats.outs, icon: LogOut, color: "text-blue-600" },
     { label: "Vistorias pendentes", value: stats.vist, icon: ClipboardCheck, color: "text-orange-600" },
-    { label: "Consumos lançados hoje", value: stats.cons, icon: ShoppingBasket, color: "text-accent" },
   ];
 
   return (

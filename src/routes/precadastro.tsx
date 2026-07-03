@@ -14,9 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import hero from "@/assets/pousada-hero.jpg";
-import { calcQtdDiarias } from "@/utils/calculations";
-import { enviarEventoHospedagem } from "@/services/webhooksService";
+import { enqueueOfflinePrecCadastro, getOfflinePrecCadastroCount, notifyBrowser, removeOfflinePrecCadastro, submitPrecCadastroOnline } from "@/utils/offlinePrecCadastro";
 import { payloadEventoHospedagem } from "@/utils/payloads";
+import { enviarEventoHospedagem } from "@/services/webhooksService";
 
 const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
 
@@ -51,10 +51,29 @@ const schema = z.object({
 
 type Form = z.infer<typeof schema>;
 
+type EnvioInfo =
+  | {
+      tipo: "online";
+      hospedagemId: string;
+      hospedeId: string;
+      payload: Omit<Form, "aceite">;
+      acomodacaoNome: string;
+      qtd: number;
+      valorDiaria: number;
+    }
+  | {
+      tipo: "offline";
+      queueId: string;
+      payload: Omit<Form, "aceite">;
+    };
+
 function PreCadastroPublico() {
   const [acomodacoes, setAcomodacoes] = useState<any[]>([]);
   const [enviado, setEnviado] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const [offlinePendentes, setOfflinePendentes] = useState(0);
+  const [envioInfo, setEnvioInfo] = useState<EnvioInfo | null>(null);
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema) as any,
@@ -66,100 +85,42 @@ function PreCadastroPublico() {
   useEffect(() => {
     supabase.from("acomodacoes").select("id, nome, valor_diaria").eq("ativo", true).order("nome")
       .then(({ data }) => setAcomodacoes(data || []));
+    setOfflinePendentes(getOfflinePrecCadastroCount());
   }, []);
 
   const onSubmit = async (values: Form) => {
     setLoading(true);
     try {
-      const hospedeId = crypto.randomUUID();
-      const hospedagemId = crypto.randomUUID();
+      const payload = {
+        ...values,
+        acompanhantes: values.acompanhantes || [],
+      };
 
-      const { error: e1 } = await supabase.from("hospedes").insert({
-        id: hospedeId,
-        nome: values.nome,
-        cpf: values.cpf,
-        nascimento: values.nascimento || null,
-        telefone: values.telefone,
-        email: values.email || null,
-        endereco: values.endereco || null,
-        cidade: values.cidade || null,
-        uf: values.uf?.toUpperCase() || null,
-        cep: values.cep || null,
-        placa_veiculo: values.placa_veiculo || null,
-      });
-      if (e1) throw e1;
-
-      const acom = acomodacoes.find((a) => a.id === values.acomodacao_id);
-      const qtd = calcQtdDiarias(values.checkin, values.checkout);
-      const valor_diaria = Number(acom?.valor_diaria || 0);
-
-      const { error: e2 } = await supabase.from("hospedagens").insert({
-        id: hospedagemId,
-        hospede_id: hospedeId,
-        acomodacao_id: values.acomodacao_id,
-        checkin: values.checkin,
-        checkout: values.checkout,
-        adultos: values.adultos,
-        criancas: values.criancas,
-        qtd_diarias: qtd,
-        valor_diaria,
-        valor_hospedagem: qtd * valor_diaria,
-        valor_total: qtd * valor_diaria,
-        status: "pre_cadastro",
-        origem: "pre_cadastro",
-        observacoes: values.observacoes || null,
-      });
-      if (e2) throw e2;
-
-      const acomp = values.acompanhantes.filter((a) => a.nome?.trim());
-      if (acomp.length > 0) {
-        await supabase.from("acompanhantes").insert(
-          acomp.map((a) => ({
-            id: crypto.randomUUID(),
-            hospedagem_id: hospedagemId,
-            nome: a.nome,
-            cpf: a.cpf || null,
-            nascimento: a.nascimento || null,
-          })),
-        );
+      if (!navigator.onLine) {
+        const item = enqueueOfflinePrecCadastro(payload);
+        setOfflinePendentes(getOfflinePrecCadastroCount());
+        notifyBrowser("Pré-cadastro salvo offline", "Os dados serão enviados assim que a internet voltar.");
+        toast.success("Pré-cadastro salvo offline", {
+          description: "Assim que a internet voltar, o sistema vai enviar automaticamente.",
+        });
+        setEnvioInfo({
+          tipo: "offline",
+          queueId: item.id,
+          payload,
+        });
+      } else {
+        const acom = acomodacoes.find((a) => a.id === values.acomodacao_id) || null;
+        const result = await submitPrecCadastroOnline(payload, acom);
+        setEnvioInfo({
+          tipo: "online",
+          hospedagemId: result.hospedagemId,
+          hospedeId: result.hospedeId,
+          payload,
+          acomodacaoNome: result.acomodacao?.nome || "",
+          qtd: result.qtd,
+          valorDiaria: Number(result.valor_diaria || 0),
+        });
       }
-
-      await enviarEventoHospedagem({
-        hospedagem_id: hospedagemId,
-        evento: "novo_precadastro",
-        status: "pre_cadastro",
-        payload: payloadEventoHospedagem({
-          evento: "novo_precadastro",
-          status: "pre_cadastro",
-          hospedagem: {
-            id: hospedagemId,
-            hospede_id: hospedeId,
-            acomodacao_id: values.acomodacao_id,
-            acomodacao_nome: acom?.nome ?? "",
-            checkin: values.checkin,
-            checkout: values.checkout,
-            adultos: values.adultos,
-            criancas: values.criancas,
-            qtd_diarias: qtd,
-            valor_diaria,
-            valor_hospedagem: qtd * valor_diaria,
-            valor_total: qtd * valor_diaria,
-            origem: "pre_cadastro",
-            observacoes: values.observacoes || "",
-            hospede_nome: values.nome,
-            hospede_cpf: values.cpf,
-            hospede_nascimento: values.nascimento || null,
-            hospede_telefone: values.telefone,
-            hospede_email: values.email || "",
-            hospede_endereco: values.endereco || "",
-            hospede_cidade: values.cidade || "",
-            hospede_uf: values.uf?.toUpperCase() || "",
-            hospede_cep: values.cep || "",
-            hospede_placa_veiculo: values.placa_veiculo || "",
-          },
-          acompanhantes: acomp,
-        }),
-      });
 
       setEnviado(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -167,6 +128,78 @@ function PreCadastroPublico() {
       toast.error(e.message || "Erro ao enviar pré-cadastro");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cancelarPreCadastro = async () => {
+    if (!envioInfo) return;
+
+    setCancelando(true);
+    try {
+      if (envioInfo.tipo === "offline") {
+        const removed = removeOfflinePrecCadastro(envioInfo.queueId);
+        if (!removed) {
+          throw new Error("Não foi possível localizar o pré-cadastro offline para cancelar.");
+        }
+        setOfflinePendentes(getOfflinePrecCadastroCount());
+      } else {
+        const { error } = await supabase
+          .from("hospedagens")
+          .update({ status: "cancelado" })
+          .eq("id", envioInfo.hospedagemId);
+
+        if (error) throw error;
+
+        await enviarEventoHospedagem({
+          hospedagem_id: envioInfo.hospedagemId,
+          evento: "mudanca_status",
+          status: "cancelado",
+          payload: payloadEventoHospedagem({
+            evento: "mudanca_status",
+            status: "cancelado",
+            hospedagem: {
+              id: envioInfo.hospedagemId,
+              hospede_id: envioInfo.hospedeId,
+              acomodacao_id: envioInfo.payload.acomodacao_id,
+              acomodacao_nome: envioInfo.acomodacaoNome,
+              checkin: envioInfo.payload.checkin,
+              checkout: envioInfo.payload.checkout,
+              adultos: envioInfo.payload.adultos,
+              criancas: envioInfo.payload.criancas,
+              qtd_diarias: envioInfo.qtd,
+              valor_diaria: envioInfo.valorDiaria,
+              valor_hospedagem: envioInfo.qtd * envioInfo.valorDiaria,
+              valor_total: envioInfo.qtd * envioInfo.valorDiaria,
+              origem: "pre_cadastro",
+              observacoes: envioInfo.payload.observacoes || "",
+              hospede_nome: envioInfo.payload.nome,
+              hospede_cpf: envioInfo.payload.cpf,
+              hospede_nascimento: envioInfo.payload.nascimento || null,
+              hospede_telefone: envioInfo.payload.telefone,
+              hospede_email: envioInfo.payload.email || "",
+              hospede_endereco: envioInfo.payload.endereco || "",
+              hospede_cidade: envioInfo.payload.cidade || "",
+              hospede_uf: envioInfo.payload.uf?.toUpperCase() || "",
+              hospede_cep: envioInfo.payload.cep || "",
+              hospede_placa_veiculo: envioInfo.payload.placa_veiculo || "",
+            },
+            acompanhantes: envioInfo.payload.acompanhantes || [],
+            extras: {
+              status_anterior: "pre_cadastro",
+              status_novo: "cancelado",
+              origem_acao: "precadastro_publico",
+            },
+          }),
+        });
+      }
+
+      toast.success("Pré-cadastro cancelado com sucesso.");
+      setEnvioInfo(null);
+      setEnviado(false);
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível cancelar o pré-cadastro.");
+    } finally {
+      setCancelando(false);
     }
   };
 
@@ -178,8 +211,19 @@ function PreCadastroPublico() {
             <CheckCircle2 className="mx-auto h-16 w-16 text-primary mb-4" />
             <h1 className="font-serif text-2xl mb-2">Pré-cadastro enviado com sucesso</h1>
             <p className="text-muted-foreground">
-              A pousada recebeu seus dados e fará a confirmação. Nos vemos em breve!
+              {envioInfo?.tipo === "offline"
+                ? "Seu pré-cadastro foi guardado neste aparelho e será enviado quando a internet voltar."
+                : "A pousada recebeu seus dados e fará a confirmação. Nos vemos em breve!"}
             </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button type="button" variant="outline" onClick={cancelarPreCadastro} disabled={cancelando}>
+                {cancelando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Cancelar pré-cadastro
+              </Button>
+              <Button asChild type="button">
+                <Link to="/">Voltar ao início</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -202,6 +246,13 @@ function PreCadastroPublico() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto p-6 space-y-6 -mt-8">
+        {offlinePendentes > 0 && (
+          <Card className="border-dashed border-primary/40 bg-primary/5">
+            <CardContent className="pt-6 text-sm">
+              Existem <b>{offlinePendentes}</b> pré-cadastro(s) salvos offline aguardando sincronização.
+            </CardContent>
+          </Card>
+        )}
         <div className="flex justify-start">
           <Button asChild type="button" variant="outline">
             <Link to="/">Voltar</Link>

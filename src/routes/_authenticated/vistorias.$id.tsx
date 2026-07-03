@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Separator } from "@/components/ui/separator";
 import { formatBRL, formatDate } from "@/utils/formatters";
-import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Pencil, Printer, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { calcHospedagem } from "@/utils/calculations";
+import { downloadElementAsPdf, printElement } from "@/utils/pdf";
 
 export const Route = createFileRoute("/_authenticated/vistorias/$id")({
   component: DetalhesVistoria,
@@ -27,6 +28,7 @@ function DetalhesVistoria() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+  const printableRef = useRef<HTMLDivElement | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -167,6 +169,16 @@ function DetalhesVistoria() {
     }
   };
 
+  const handlePrint = () => {
+    if (!printableRef.current) return;
+    printElement(printableRef.current, `Vistoria - ${hospedagem?.hospede?.nome || vistoria.id}`);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!printableRef.current) return;
+    await downloadElementAsPdf(printableRef.current, `vistoria-${hospedagem?.hospede?.nome || vistoria.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -190,6 +202,14 @@ function DetalhesVistoria() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-1" />
+            Imprimir
+          </Button>
+          <Button variant="outline" onClick={handleDownloadPdf}>
+            <Download className="h-4 w-4 mr-1" />
+            Baixar PDF
+          </Button>
           <EditarVistoriaDialog vistoria={vistoria} itens={itens} hospedagem={hospedagem} onSaved={carregar} />
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -225,106 +245,108 @@ function DetalhesVistoria() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-serif">Resumo da vistoria</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm md:grid-cols-2">
-            <Info label="Hóspede" value={hospedagem?.hospede?.nome} />
-            <Info label="Acomodação" value={hospedagem?.acomodacao?.nome} />
-            <Info label="Check-in" value={formatDate(hospedagem?.checkin)} />
-            <Info label="Check-out" value={formatDate(hospedagem?.checkout)} />
-            <Info label="Vistoria criada em" value={formatDate(vistoria.criado_em)} />
-            <Info label="Quarto vistoriado" value={vistoria.quarto_vistoriado ? "Sim" : "Não"} />
-            <Info label="Houve consumo" value={vistoria.houve_consumo ? "Sim" : "Não"} />
-            <Info label="Houve dano" value={vistoria.houve_dano ? "Sim" : "Não"} />
-          </CardContent>
-        </Card>
+      <div ref={printableRef} className="space-y-6">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="font-serif">Resumo da vistoria</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm md:grid-cols-2">
+              <Info label="Hóspede" value={hospedagem?.hospede?.nome} />
+              <Info label="Acomodação" value={hospedagem?.acomodacao?.nome} />
+              <Info label="Check-in" value={formatDate(hospedagem?.checkin)} />
+              <Info label="Check-out" value={formatDate(hospedagem?.checkout)} />
+              <Info label="Vistoria criada em" value={formatDate(vistoria.criado_em)} />
+              <Info label="Quarto vistoriado" value={vistoria.quarto_vistoriado ? "Sim" : "Não"} />
+              <Info label="Houve consumo" value={vistoria.houve_consumo ? "Sim" : "Não"} />
+              <Info label="Houve dano" value={vistoria.houve_dano ? "Sim" : "Não"} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif">Totais da vistoria</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1.5 text-sm">
+              <Row label="Consumo" value={formatBRL(valorConsumo)} />
+              <Row label="Danos" value={formatBRL(valorDano)} />
+              <Separator className="my-2" />
+              <Row label="Total da vistoria" value={formatBRL(totalVistoria)} bold />
+            </CardContent>
+          </Card>
+        </div>
+
+        {vistoria.descricao_dano && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif">Descrição do dano</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {vistoria.descricao_dano}
+            </CardContent>
+          </Card>
+        )}
+
+        {vistoria.observacoes && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-serif">Observações da vistoria</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {vistoria.observacoes}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif">Totais da vistoria</CardTitle>
+            <CardTitle className="font-serif">Planilha de gastos da vistoria</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1.5 text-sm">
-            <Row label="Consumo" value={formatBRL(valorConsumo)} />
-            <Row label="Danos" value={formatBRL(valorDano)} />
-            <Separator className="my-2" />
-            <Row label="Total da vistoria" value={formatBRL(totalVistoria)} bold />
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="px-3 py-2 font-medium">Descrição</th>
+                  <th className="px-3 py-2 font-medium text-center">Qtd.</th>
+                  <th className="px-3 py-2 font-medium text-right">Unitário</th>
+                  <th className="px-3 py-2 font-medium text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((item) => (
+                  <tr key={item.id} className="border-b last:border-0">
+                    <td className="px-3 py-2">{item.nome_produto || "Item"}</td>
+                    <td className="px-3 py-2 text-center">{item.quantidade || 0}</td>
+                    <td className="px-3 py-2 text-right">{formatBRL(item.valor_unitario)}</td>
+                    <td className="px-3 py-2 text-right font-medium">{formatBRL(item.valor_total)}</td>
+                  </tr>
+                ))}
+                {vistoria.houve_dano && (
+                  <tr className="border-b last:border-0">
+                    <td className="px-3 py-2">{vistoria.descricao_dano || "Dano lançado"}</td>
+                    <td className="px-3 py-2 text-center">1</td>
+                    <td className="px-3 py-2 text-right">{formatBRL(vistoria.valor_dano)}</td>
+                    <td className="px-3 py-2 text-right font-medium">{formatBRL(vistoria.valor_dano)}</td>
+                  </tr>
+                )}
+                {itens.length === 0 && !vistoria.houve_dano && (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
+                      Nenhum gasto foi lançado nesta vistoria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="px-3 py-3 text-right font-semibold">Total geral</td>
+                  <td className="px-3 py-3 text-right font-semibold">{formatBRL(totalVistoria)}</td>
+                </tr>
+              </tfoot>
+            </table>
           </CardContent>
         </Card>
       </div>
-
-      {vistoria.descricao_dano && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif">Descrição do dano</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {vistoria.descricao_dano}
-          </CardContent>
-        </Card>
-      )}
-
-      {vistoria.observacoes && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif">Observações da vistoria</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {vistoria.observacoes}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-serif">Planilha de gastos da vistoria</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="px-3 py-2 font-medium">Descrição</th>
-                <th className="px-3 py-2 font-medium text-center">Qtd.</th>
-                <th className="px-3 py-2 font-medium text-right">Unitário</th>
-                <th className="px-3 py-2 font-medium text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {itens.map((item) => (
-                <tr key={item.id} className="border-b last:border-0">
-                  <td className="px-3 py-2">{item.nome_produto || "Item"}</td>
-                  <td className="px-3 py-2 text-center">{item.quantidade || 0}</td>
-                  <td className="px-3 py-2 text-right">{formatBRL(item.valor_unitario)}</td>
-                  <td className="px-3 py-2 text-right font-medium">{formatBRL(item.valor_total)}</td>
-                </tr>
-              ))}
-              {vistoria.houve_dano && (
-                <tr className="border-b last:border-0">
-                  <td className="px-3 py-2">{vistoria.descricao_dano || "Dano lançado"}</td>
-                  <td className="px-3 py-2 text-center">1</td>
-                  <td className="px-3 py-2 text-right">{formatBRL(vistoria.valor_dano)}</td>
-                  <td className="px-3 py-2 text-right font-medium">{formatBRL(vistoria.valor_dano)}</td>
-                </tr>
-              )}
-              {itens.length === 0 && !vistoria.houve_dano && (
-                <tr>
-                  <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
-                    Nenhum gasto foi lançado nesta vistoria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={3} className="px-3 py-3 text-right font-semibold">Total geral</td>
-                <td className="px-3 py-3 text-right font-semibold">{formatBRL(totalVistoria)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </CardContent>
-      </Card>
     </div>
   );
 }

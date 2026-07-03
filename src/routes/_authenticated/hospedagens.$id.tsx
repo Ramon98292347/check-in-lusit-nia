@@ -1,5 +1,5 @@
 import { createFileRoute, useParams, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,12 @@ import { Separator } from "@/components/ui/separator";
 import {
   LogIn, ClipboardCheck, ShoppingBasket, LogOut, FileText,
   MessageSquare, Mail, Minus, Plus, ArrowLeft, Loader2,
-  Pencil, Trash2,
+  Pencil, Trash2, Printer, Download,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { payloadFichaHospede, payloadControleConsumo, payloadEventoHospedagem } from "@/utils/payloads";
 import { enviarEventoHospedagem, enviarWebhook } from "@/services/webhooksService";
+import { downloadElementAsPdf, printElement } from "@/utils/pdf";
 
 export const Route = createFileRoute("/_authenticated/hospedagens/$id")({
   component: Detalhes,
@@ -37,6 +38,7 @@ function Detalhes() {
   const [errorMessage, setErrorMessage] = useState("");
   const { role } = useAuth();
   const navigate = useNavigate();
+  const printableRef = useRef<HTMLDivElement | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -217,6 +219,16 @@ function Detalhes() {
     }
   };
 
+  const handlePrint = () => {
+    if (!printableRef.current) return;
+    printElement(printableRef.current, `Hospedagem - ${h.hospede?.nome || h.id}`);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!printableRef.current) return;
+    await downloadElementAsPdf(printableRef.current, `hospedagem-${h.hospede?.nome || h.id}`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -234,6 +246,14 @@ function Detalhes() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-1" />
+            Imprimir
+          </Button>
+          <Button variant="outline" onClick={handleDownloadPdf}>
+            <Download className="h-4 w-4 mr-1" />
+            Baixar PDF
+          </Button>
           <EditarHospedagemDialog hospedagem={h} onSaved={carregar} />
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -270,122 +290,124 @@ function Detalhes() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="font-serif">Dados da hospedagem</CardTitle></CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            <Info label="Acomodação" value={h.acomodacao?.nome} />
-            <Info label="Check-in" value={formatDate(h.checkin)} />
-            <Info label="Check-out" value={formatDate(h.checkout)} />
-            <Info label="Adultos / Crianças" value={`${h.adultos || 0} / ${h.criancas || 0}`} />
-            <Info label="Quantidade de diárias" value={h.qtd_diarias} />
-            <Info label="Status da hospedagem" value={h.status ? h.status.replaceAll("_", " ") : "—"} />
-          </CardContent>
-        </Card>
+      <div ref={printableRef} className="space-y-6">
+        <div className="grid lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader><CardTitle className="font-serif">Dados da hospedagem</CardTitle></CardHeader>
+            <CardContent className="grid gap-3 text-sm">
+              <Info label="Acomodação" value={h.acomodacao?.nome} />
+              <Info label="Check-in" value={formatDate(h.checkin)} />
+              <Info label="Check-out" value={formatDate(h.checkout)} />
+              <Info label="Adultos / Crianças" value={`${h.adultos || 0} / ${h.criancas || 0}`} />
+              <Info label="Quantidade de diárias" value={h.qtd_diarias} />
+              <Info label="Status da hospedagem" value={h.status ? h.status.replaceAll("_", " ") : "—"} />
+            </CardContent>
+          </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="font-serif">Dados do hóspede</CardTitle></CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-3 text-sm">
-            <Info label="Nome" value={h.hospede?.nome} />
-            <Info label="CPF" value={formatCPF(h.hospede?.cpf)} />
-            <Info label="Nascimento" value={formatDate(h.hospede?.nascimento)} />
-            <Info label="Telefone" value={formatPhone(h.hospede?.telefone)} />
-            <Info label="E-mail" value={h.hospede?.email} />
-            <Info label="Placa" value={h.hospede?.placa_veiculo} />
-            <Info label="Endereço" value={h.hospede?.endereco} />
-            <Info label="Cidade/UF" value={`${h.hospede?.cidade || "—"} / ${h.hospede?.uf || "—"}`} />
-            <Info label="CEP" value={h.hospede?.cep} />
-          </CardContent>
-        </Card>
+          <Card className="lg:col-span-2">
+            <CardHeader><CardTitle className="font-serif">Dados do hóspede</CardTitle></CardHeader>
+            <CardContent className="grid md:grid-cols-2 gap-3 text-sm">
+              <Info label="Nome" value={h.hospede?.nome} />
+              <Info label="CPF" value={formatCPF(h.hospede?.cpf)} />
+              <Info label="Nascimento" value={formatDate(h.hospede?.nascimento)} />
+              <Info label="Telefone" value={formatPhone(h.hospede?.telefone)} />
+              <Info label="E-mail" value={h.hospede?.email} />
+              <Info label="Placa" value={h.hospede?.placa_veiculo} />
+              <Info label="Endereço" value={h.hospede?.endereco} />
+              <Info label="Cidade/UF" value={`${h.hospede?.cidade || "—"} / ${h.hospede?.uf || "—"}`} />
+              <Info label="CEP" value={h.hospede?.cep} />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="font-serif">Valores</CardTitle></CardHeader>
-          <CardContent className="text-sm space-y-1.5">
-            <Row label="Diárias" value={`${h.qtd_diarias} × ${formatBRL(h.valor_diaria)}`} />
-            <Row label="Hospedagem" value={formatBRL(h.valor_hospedagem)} />
-            <Row label="Consumo" value={formatBRL(h.valor_consumo)} />
-            <Row label="Danos/extras" value={formatBRL(h.valor_danos)} />
-            <Row label="Desconto" value={`- ${formatBRL(h.desconto)}`} />
-            <Separator className="my-2" />
-            <Row label="Total" value={formatBRL(h.valor_total)} bold />
-            <Row label="Pago" value={formatBRL(h.valor_pago)} />
-            <Row label="Saldo" value={formatBRL(h.saldo)} bold className={Number(h.saldo) > 0 ? "text-destructive" : "text-green-700"} />
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader><CardTitle className="font-serif">Valores</CardTitle></CardHeader>
+            <CardContent className="text-sm space-y-1.5">
+              <Row label="Diárias" value={`${h.qtd_diarias} × ${formatBRL(h.valor_diaria)}`} />
+              <Row label="Hospedagem" value={formatBRL(h.valor_hospedagem)} />
+              <Row label="Consumo" value={formatBRL(h.valor_consumo)} />
+              <Row label="Danos/extras" value={formatBRL(h.valor_danos)} />
+              <Row label="Desconto" value={`- ${formatBRL(h.desconto)}`} />
+              <Separator className="my-2" />
+              <Row label="Total" value={formatBRL(h.valor_total)} bold />
+              <Row label="Pago" value={formatBRL(h.valor_pago)} />
+              <Row label="Saldo" value={formatBRL(h.saldo)} bold className={Number(h.saldo) > 0 ? "text-destructive" : "text-green-700"} />
+            </CardContent>
+          </Card>
+        </div>
 
-      {h.acompanhantes && h.acompanhantes.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="font-serif">Acompanhantes</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {h.acompanhantes.map((a: any) => (
-              <div key={a.id} className="grid md:grid-cols-3 gap-2 p-3 rounded-lg bg-muted/40 text-sm">
-                <div><span className="text-muted-foreground text-xs">Nome</span><div>{a.nome || "—"}</div></div>
-                <div><span className="text-muted-foreground text-xs">CPF</span><div>{formatCPF(a.cpf)}</div></div>
-                <div><span className="text-muted-foreground text-xs">Nascimento</span><div>{formatDate(a.nascimento)}</div></div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {itens.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="font-serif">Itens consumidos</CardTitle></CardHeader>
-          <CardContent className="text-sm">
-            {itens.map((i) => (
-              <div key={i.id} className="flex justify-between py-1.5 border-b last:border-0">
-                <span>{i.quantidade}× {i.nome_produto}</span>
-                <span className="font-medium">{formatBRL(i.valor_total)}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader><CardTitle className="font-serif">Histórico de reservas</CardTitle></CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left">
-                <th className="px-3 py-2 font-medium">Acomodação</th>
-                <th className="px-3 py-2 font-medium">Check-in</th>
-                <th className="px-3 py-2 font-medium">Check-out</th>
-                <th className="px-3 py-2 font-medium">Ad./Cri.</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 font-medium text-right">Valor total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historico.map((reserva) => (
-                <tr key={reserva.id} className={`border-b last:border-0 ${reserva.id === h.id ? "bg-muted/30" : ""}`}>
-                  <td className="px-3 py-2">{reserva.acomodacao?.nome || "—"}</td>
-                  <td className="px-3 py-2">{formatDate(reserva.checkin)}</td>
-                  <td className="px-3 py-2">{formatDate(reserva.checkout)}</td>
-                  <td className="px-3 py-2">{reserva.adultos || 0}/{reserva.criancas || 0}</td>
-                  <td className="px-3 py-2"><StatusBadge status={reserva.status} /></td>
-                  <td className="px-3 py-2 text-right font-medium">{formatBRL(reserva.valor_total)}</td>
-                </tr>
+        {h.acompanhantes && h.acompanhantes.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="font-serif">Acompanhantes</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              {h.acompanhantes.map((a: any) => (
+                <div key={a.id} className="grid md:grid-cols-3 gap-2 p-3 rounded-lg bg-muted/40 text-sm">
+                  <div><span className="text-muted-foreground text-xs">Nome</span><div>{a.nome || "—"}</div></div>
+                  <div><span className="text-muted-foreground text-xs">CPF</span><div>{formatCPF(a.cpf)}</div></div>
+                  <div><span className="text-muted-foreground text-xs">Nascimento</span><div>{formatDate(a.nascimento)}</div></div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        )}
 
-      <Card>
-        <CardHeader><CardTitle className="font-serif">Documentos & Envios</CardTitle></CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => enviarFicha("whatsapp")}><MessageSquare className="h-4 w-4 mr-1" />Enviar Ficha WhatsApp</Button>
-          <Button variant="outline" onClick={() => enviarFicha("email")}><Mail className="h-4 w-4 mr-1" />Enviar Ficha E-mail</Button>
-          <Button variant="outline" onClick={() => enviarConsumoDoc("whatsapp")}><MessageSquare className="h-4 w-4 mr-1" />Enviar Consumo WhatsApp</Button>
-          <Button variant="outline" onClick={() => enviarConsumoDoc("email")}><Mail className="h-4 w-4 mr-1" />Enviar Consumo E-mail</Button>
-        </CardContent>
-      </Card>
+        {itens.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="font-serif">Itens consumidos</CardTitle></CardHeader>
+            <CardContent className="text-sm">
+              {itens.map((i) => (
+                <div key={i.id} className="flex justify-between py-1.5 border-b last:border-0">
+                  <span>{i.quantidade}× {i.nome_produto}</span>
+                  <span className="font-medium">{formatBRL(i.valor_total)}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
-      {h.observacoes && (
-        <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground mb-1">Observações</div><div className="text-sm">{h.observacoes}</div></CardContent></Card>
-      )}
+        <Card>
+          <CardHeader><CardTitle className="font-serif">Histórico de reservas</CardTitle></CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="px-3 py-2 font-medium">Acomodação</th>
+                  <th className="px-3 py-2 font-medium">Check-in</th>
+                  <th className="px-3 py-2 font-medium">Check-out</th>
+                  <th className="px-3 py-2 font-medium">Ad./Cri.</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium text-right">Valor total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historico.map((reserva) => (
+                  <tr key={reserva.id} className={`border-b last:border-0 ${reserva.id === h.id ? "bg-muted/30" : ""}`}>
+                    <td className="px-3 py-2">{reserva.acomodacao?.nome || "—"}</td>
+                    <td className="px-3 py-2">{formatDate(reserva.checkin)}</td>
+                    <td className="px-3 py-2">{formatDate(reserva.checkout)}</td>
+                    <td className="px-3 py-2">{reserva.adultos || 0}/{reserva.criancas || 0}</td>
+                    <td className="px-3 py-2"><StatusBadge status={reserva.status} /></td>
+                    <td className="px-3 py-2 text-right font-medium">{formatBRL(reserva.valor_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="font-serif">Documentos & Envios</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => enviarFicha("whatsapp")}><MessageSquare className="h-4 w-4 mr-1" />Enviar Ficha WhatsApp</Button>
+            <Button variant="outline" onClick={() => enviarFicha("email")}><Mail className="h-4 w-4 mr-1" />Enviar Ficha E-mail</Button>
+            <Button variant="outline" onClick={() => enviarConsumoDoc("whatsapp")}><MessageSquare className="h-4 w-4 mr-1" />Enviar Consumo WhatsApp</Button>
+            <Button variant="outline" onClick={() => enviarConsumoDoc("email")}><Mail className="h-4 w-4 mr-1" />Enviar Consumo E-mail</Button>
+          </CardContent>
+        </Card>
+
+        {h.observacoes && (
+          <Card><CardContent className="pt-6"><div className="text-xs text-muted-foreground mb-1">Observações</div><div className="text-sm">{h.observacoes}</div></CardContent></Card>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,22 @@
+{
+  "name": "Check-in Lusitania",
+  "short_name": "Lusitania",
+  "description": "Sistema interno da Pousada Lusitania com pre-cadastro, hospedagens e vistorias.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#1f3a2c",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon-galo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-galo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
