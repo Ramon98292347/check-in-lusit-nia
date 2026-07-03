@@ -6,6 +6,7 @@ import { AppSidebar, MobileBottomNav } from "@/components/layout/AppSidebar";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -15,6 +16,12 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const userInitials = user?.nome
+    ?.split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CL";
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -101,7 +108,12 @@ function AuthenticatedLayout() {
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/70 px-4 backdrop-blur">
             <SidebarTrigger className="hidden md:inline-flex" />
-            <div className="min-w-0 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
+            <div className="min-w-0 flex-1 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
+            <Avatar className="h-9 w-9 border border-border/70 bg-primary/5">
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
           </header>
           <main className="mx-auto w-full max-w-7xl flex-1 p-3 pb-24 md:p-6 md:pb-6">
             <Outlet />

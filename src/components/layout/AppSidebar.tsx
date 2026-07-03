@@ -108,10 +108,12 @@ export function AppSidebar() {
 
 export function MobileBottomNav() {
   const path = useRouterState({ select: (r) => r.location.pathname });
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 md:hidden">
-      <div className="grid grid-cols-6 gap-2 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="grid grid-cols-7 gap-2 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3">
         {items.map((it) => {
           const active = path === it.url || path.startsWith(it.url + "/");
           return (
@@ -130,6 +132,18 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          title="Sair"
+          aria-label="Sair"
+          onClick={async () => {
+            await signOut();
+            navigate({ to: "/auth" });
+          }}
+          className="flex min-h-16 flex-col items-center justify-center rounded-xl px-1 text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+        >
+          <LogOut className="h-5 w-5 shrink-0" />
+        </button>
       </div>
     </nav>
   );
