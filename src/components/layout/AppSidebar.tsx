@@ -105,3 +105,31 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+export function MobileBottomNav() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 md:hidden">
+      <div className="grid grid-cols-6 gap-1 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+        {items.map((it) => {
+          const active = path === it.url || path.startsWith(it.url + "/");
+          return (
+            <Link
+              key={it.url}
+              to={it.url}
+              className={`flex min-h-16 flex-col items-center justify-center rounded-xl px-1 text-[11px] font-medium transition ${
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              }`}
+            >
+              <it.icon className="mb-1 h-4 w-4 shrink-0" />
+              <span className="line-clamp-2 text-center leading-tight">{it.title}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

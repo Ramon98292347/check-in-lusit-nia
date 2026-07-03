@@ -138,6 +138,28 @@ function Detalhes() {
     carregar();
   };
 
+  const cancelarPreCadastro = async () => {
+    const { error } = await supabase.from("hospedagens").update({ status: "cancelado" }).eq("id", id);
+    if (error) return toast.error(error.message);
+    await enviarEventoHospedagem({
+      hospedagem_id: h.id,
+      evento: "mudanca_status",
+      status: "cancelado",
+      payload: payloadEventoHospedagem({
+        evento: "mudanca_status",
+        status: "cancelado",
+        hospedagem: h,
+        extras: {
+          status_anterior: h.status,
+          status_novo: "cancelado",
+          origem_acao: "detalhes_hospedagem",
+        },
+      }),
+    });
+    toast.success("Pré-cadastro cancelado");
+    carregar();
+  };
+
   const confirmarCheckin = async () => {
     const { error: e1 } = await supabase.from("hospedagens").update({ status: "hospedado" }).eq("id", id);
     if (e1) return toast.error(e1.message);
@@ -276,7 +298,13 @@ function Detalhes() {
             </AlertDialogContent>
           </AlertDialog>
           {h.status === "pre_cadastro" && (
-            <Button onClick={confirmarPreCadastro}><FileText className="h-4 w-4 mr-1" />Confirmar pré-cadastro</Button>
+            <>
+              <Button variant="outline" onClick={cancelarPreCadastro}>
+                <Trash2 className="h-4 w-4 mr-1" />
+                Cancelar
+              </Button>
+              <Button onClick={confirmarPreCadastro}><FileText className="h-4 w-4 mr-1" />Confirmar pré-cadastro</Button>
+            </>
           )}
           {h.status === "checkin_confirmado" && (
             <Button onClick={confirmarCheckin}><LogIn className="h-4 w-4 mr-1" />Realizar Check-in</Button>

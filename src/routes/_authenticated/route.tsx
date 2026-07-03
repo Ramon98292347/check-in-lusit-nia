@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppSidebar, MobileBottomNav } from "@/components/layout/AppSidebar";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -99,13 +99,14 @@ function AuthenticatedLayout() {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <header className="h-14 flex items-center gap-2 border-b bg-card/50 backdrop-blur px-4 sticky top-0 z-10">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/70 px-4 backdrop-blur">
             <SidebarTrigger />
-            <div className="font-serif text-lg text-foreground">Check-in Lusitânia</div>
+            <div className="min-w-0 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
           </header>
-          <main className="flex-1 p-4 md:p-6 max-w-7xl mx-auto w-full">
+          <main className="mx-auto w-full max-w-7xl flex-1 p-3 pb-24 md:p-6 md:pb-6">
             <Outlet />
           </main>
+          <MobileBottomNav />
         </SidebarInset>
       </div>
     </SidebarProvider>
