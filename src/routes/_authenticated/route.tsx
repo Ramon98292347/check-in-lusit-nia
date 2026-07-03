@@ -100,7 +100,7 @@ function AuthenticatedLayout() {
         <AppSidebar />
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/70 px-4 backdrop-blur">
-            <SidebarTrigger />
+            <SidebarTrigger className="hidden md:inline-flex" />
             <div className="min-w-0 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
           </header>
           <main className="mx-auto w-full max-w-7xl flex-1 p-3 pb-24 md:p-6 md:pb-6">
