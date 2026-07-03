@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,8 @@ function Hospedagens() {
   const [rows, setRows] = useState<any[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [busca, setBusca] = useState("");
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isDetalhe = /^\/hospedagens\/[^/]+$/.test(pathname);
 
   useEffect(() => {
     let q = supabase
@@ -36,6 +38,10 @@ function Hospedagens() {
       r.acomodacao?.nome?.toLowerCase().includes(b)
     );
   });
+
+  if (isDetalhe) {
+    return <Outlet />;
+  }
 
   return (
     <div className="space-y-6">

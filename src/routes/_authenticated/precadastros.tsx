@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate, formatCPF, formatPhone } from "@/utils/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "sonner";
+import { enviarEventoHospedagem } from "@/services/webhooksService";
+import { payloadEventoHospedagem } from "@/utils/payloads";
 
 export const Route = createFileRoute("/_authenticated/precadastros")({
   component: PreCadastros,
@@ -14,25 +17,73 @@ export const Route = createFileRoute("/_authenticated/precadastros")({
 function PreCadastros() {
   const [rows, setRows] = useState<any[]>([]);
   const [publicUrl, setPublicUrl] = useState("/precadastro");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const carregar = async () => {
+    const { data } = await supabase
+      .from("hospedagens")
+      .select("id, status, acomodacao_id, checkin, checkout, adultos, criancas, hospede:hospedes(nome, cpf, telefone)")
+      .in("status", ["pre_cadastro", "checkin_confirmado"])
+      .order("criado_em", { ascending: false });
+
+    setRows(data || []);
+  };
 
   useEffect(() => {
     setPublicUrl(`${window.location.origin}/precadastro`);
   }, []);
 
   useEffect(() => {
-    supabase
-      .from("hospedagens")
-      .select("id, status, checkin, checkout, adultos, criancas, hospede:hospedes(nome, cpf, telefone)")
-      .eq("status", "pre_cadastro")
-      .order("criado_em", { ascending: false })
-      .then(({ data }) => setRows(data || []));
+    carregar();
   }, []);
+
+  const atualizarStatus = async (row: any, novoStatus: "checkin_confirmado" | "hospedado") => {
+    setSavingId(row.id);
+    try {
+      const { error } = await supabase.from("hospedagens").update({ status: novoStatus }).eq("id", row.id);
+      if (error) throw error;
+
+      if (novoStatus === "hospedado" && row.acomodacao_id) {
+        const { error: acomodacaoError } = await supabase
+          .from("acomodacoes")
+          .update({ status: "ocupado" })
+          .eq("id", row.acomodacao_id);
+
+        if (acomodacaoError) throw acomodacaoError;
+      }
+
+      await enviarEventoHospedagem({
+        hospedagem_id: row.id,
+        evento: "mudanca_status",
+        status: novoStatus,
+        payload: payloadEventoHospedagem({
+          evento: "mudanca_status",
+          status: novoStatus,
+          hospedagem: row,
+          extras: {
+            status_anterior: row.status,
+            status_novo: novoStatus,
+            origem_acao: "lista_precadastros",
+          },
+        }),
+      });
+
+      toast.success(
+        novoStatus === "checkin_confirmado" ? "Pré-cadastro confirmado com sucesso." : "Check-in realizado com sucesso.",
+      );
+      await carregar();
+    } catch (e: any) {
+      toast.error(e.message || "Não foi possível atualizar o status.");
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-serif text-3xl">Pré-cadastros</h1>
-        <p className="text-muted-foreground text-sm">Fichas recebidas aguardando confirmação</p>
+        <p className="text-muted-foreground text-sm">Fichas recebidas e confirmações pendentes de entrada</p>
       </div>
       <Card className="border-border/60 shadow-soft">
         <CardHeader><CardTitle className="font-serif text-xl">Atalho de cadastro</CardTitle></CardHeader>
@@ -88,9 +139,29 @@ function PreCadastros() {
                   <TableCell className="text-center">{r.criancas}</TableCell>
                   <TableCell><StatusBadge status={r.status} /></TableCell>
                   <TableCell className="text-right">
-                    <Button asChild size="sm" variant="outline">
-                      <Link to="/hospedagens/$id" params={{ id: r.id }}>Ver detalhes</Link>
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {r.status === "pre_cadastro" && (
+                        <Button
+                          size="sm"
+                          onClick={() => atualizarStatus(r, "checkin_confirmado")}
+                          disabled={savingId === r.id}
+                        >
+                          Confirmar
+                        </Button>
+                      )}
+                      {r.status === "checkin_confirmado" && (
+                        <Button
+                          size="sm"
+                          onClick={() => atualizarStatus(r, "hospedado")}
+                          disabled={savingId === r.id}
+                        >
+                          Fazer check-in
+                        </Button>
+                      )}
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/hospedagens/$id" params={{ id: r.id }}>Ver detalhes</Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

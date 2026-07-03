@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import hero from "@/assets/pousada-hero.jpg";
 import { calcQtdDiarias } from "@/utils/calculations";
+import { enviarEventoHospedagem } from "@/services/webhooksService";
+import { payloadEventoHospedagem } from "@/utils/payloads";
 
 const logoUrl = "/Captura%20de%20tela%202026-07-03%20124733.png";
 
@@ -121,6 +123,43 @@ function PreCadastroPublico() {
           })),
         );
       }
+
+      await enviarEventoHospedagem({
+        hospedagem_id: hospedagemId,
+        evento: "novo_precadastro",
+        status: "pre_cadastro",
+        payload: payloadEventoHospedagem({
+          evento: "novo_precadastro",
+          status: "pre_cadastro",
+          hospedagem: {
+            id: hospedagemId,
+            hospede_id: hospedeId,
+            acomodacao_id: values.acomodacao_id,
+            acomodacao_nome: acom?.nome ?? "",
+            checkin: values.checkin,
+            checkout: values.checkout,
+            adultos: values.adultos,
+            criancas: values.criancas,
+            qtd_diarias: qtd,
+            valor_diaria,
+            valor_hospedagem: qtd * valor_diaria,
+            valor_total: qtd * valor_diaria,
+            origem: "pre_cadastro",
+            observacoes: values.observacoes || "",
+            hospede_nome: values.nome,
+            hospede_cpf: values.cpf,
+            hospede_nascimento: values.nascimento || null,
+            hospede_telefone: values.telefone,
+            hospede_email: values.email || "",
+            hospede_endereco: values.endereco || "",
+            hospede_cidade: values.cidade || "",
+            hospede_uf: values.uf?.toUpperCase() || "",
+            hospede_cep: values.cep || "",
+            hospede_placa_veiculo: values.placa_veiculo || "",
+          },
+          acompanhantes: acomp,
+        }),
+      });
 
       setEnviado(true);
       window.scrollTo({ top: 0, behavior: "smooth" });

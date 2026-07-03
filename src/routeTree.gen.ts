@@ -21,6 +21,7 @@ import { Route as AuthenticatedHospedagensRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAcomodacoesRouteImport } from './routes/_authenticated/acomodacoes'
+import { Route as AuthenticatedVistoriasIdRouteImport } from './routes/_authenticated/vistorias.$id'
 import { Route as AuthenticatedHospedagensIdRouteImport } from './routes/_authenticated/hospedagens.$id'
 
 const PrecadastroRoute = PrecadastroRouteImport.update({
@@ -86,6 +87,12 @@ const AuthenticatedAcomodacoesRoute =
     path: '/acomodacoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVistoriasIdRoute =
+  AuthenticatedVistoriasIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedVistoriasRoute,
+  } as any)
 const AuthenticatedHospedagensIdRoute =
   AuthenticatedHospedagensIdRouteImport.update({
     id: '/$id',
@@ -104,8 +111,9 @@ export interface FileRoutesByFullPath {
   '/painel': typeof AuthenticatedPainelRoute
   '/precadastros': typeof AuthenticatedPrecadastrosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
-  '/vistorias': typeof AuthenticatedVistoriasRoute
+  '/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,8 +126,9 @@ export interface FileRoutesByTo {
   '/painel': typeof AuthenticatedPainelRoute
   '/precadastros': typeof AuthenticatedPrecadastrosRoute
   '/produtos': typeof AuthenticatedProdutosRoute
-  '/vistorias': typeof AuthenticatedVistoriasRoute
+  '/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,8 +143,9 @@ export interface FileRoutesById {
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/precadastros': typeof AuthenticatedPrecadastrosRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
-  '/_authenticated/vistorias': typeof AuthenticatedVistoriasRoute
+  '/_authenticated/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/_authenticated/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/_authenticated/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vistorias'
     | '/hospedagens/$id'
+    | '/vistorias/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vistorias'
     | '/hospedagens/$id'
+    | '/vistorias/$id'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/_authenticated/produtos'
     | '/_authenticated/vistorias'
     | '/_authenticated/hospedagens/$id'
+    | '/_authenticated/vistorias/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcomodacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vistorias/$id': {
+      id: '/_authenticated/vistorias/$id'
+      path: '/$id'
+      fullPath: '/vistorias/$id'
+      preLoaderRoute: typeof AuthenticatedVistoriasIdRouteImport
+      parentRoute: typeof AuthenticatedVistoriasRoute
+    }
     '/_authenticated/hospedagens/$id': {
       id: '/_authenticated/hospedagens/$id'
       path: '/$id'
@@ -300,6 +320,20 @@ const AuthenticatedHospedagensRouteWithChildren =
     AuthenticatedHospedagensRouteChildren,
   )
 
+interface AuthenticatedVistoriasRouteChildren {
+  AuthenticatedVistoriasIdRoute: typeof AuthenticatedVistoriasIdRoute
+}
+
+const AuthenticatedVistoriasRouteChildren: AuthenticatedVistoriasRouteChildren =
+  {
+    AuthenticatedVistoriasIdRoute: AuthenticatedVistoriasIdRoute,
+  }
+
+const AuthenticatedVistoriasRouteWithChildren =
+  AuthenticatedVistoriasRoute._addFileChildren(
+    AuthenticatedVistoriasRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAcomodacoesRoute: typeof AuthenticatedAcomodacoesRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
@@ -308,7 +342,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedPrecadastrosRoute: typeof AuthenticatedPrecadastrosRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
-  AuthenticatedVistoriasRoute: typeof AuthenticatedVistoriasRoute
+  AuthenticatedVistoriasRoute: typeof AuthenticatedVistoriasRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -319,7 +353,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedPrecadastrosRoute: AuthenticatedPrecadastrosRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
-  AuthenticatedVistoriasRoute: AuthenticatedVistoriasRoute,
+  AuthenticatedVistoriasRoute: AuthenticatedVistoriasRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =

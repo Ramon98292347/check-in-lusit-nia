@@ -440,6 +440,7 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO public.configuracoes_sistema (chave, valor, descricao) VALUES
+  ('webhook_hotel_eventos','https://n8n-n8n.ynlng8.easypanel.host/webhook/hotel','Webhook n8n para eventos gerais do hotel'),
   ('webhook_ficha_hospede','https://n8n-n8n.ynlng8.easypanel.host/webhook/hotel','Webhook n8n para gerar Ficha de Hóspede'),
   ('webhook_controle_consumo','https://n8n-n8n.ynlng8.easypanel.host/webhook/hotel','Webhook n8n para gerar Controle de Consumo'),
   ('webhook_whatsapp','https://n8n-n8n.ynlng8.easypanel.host/webhook/hotel','Webhook n8n para envio por WhatsApp'),
