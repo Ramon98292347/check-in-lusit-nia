@@ -9,38 +9,210 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrecadastroRouteImport } from './routes/precadastro'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedVistoriasRouteImport } from './routes/_authenticated/vistorias'
+import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
+import { Route as AuthenticatedPrecadastrosRouteImport } from './routes/_authenticated/precadastros'
+import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedHospedagensRouteImport } from './routes/_authenticated/hospedagens'
+import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authenticated/documentos'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedAcomodacoesRouteImport } from './routes/_authenticated/acomodacoes'
+import { Route as AuthenticatedHospedagensIdRouteImport } from './routes/_authenticated/hospedagens.$id'
 
+const PrecadastroRoute = PrecadastroRouteImport.update({
+  id: '/precadastro',
+  path: '/precadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVistoriasRoute = AuthenticatedVistoriasRouteImport.update({
+  id: '/vistorias',
+  path: '/vistorias',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrecadastrosRoute =
+  AuthenticatedPrecadastrosRouteImport.update({
+    id: '/precadastros',
+    path: '/precadastros',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHospedagensRoute =
+  AuthenticatedHospedagensRouteImport.update({
+    id: '/hospedagens',
+    path: '/hospedagens',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDocumentosRoute = AuthenticatedDocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcomodacoesRoute =
+  AuthenticatedAcomodacoesRouteImport.update({
+    id: '/acomodacoes',
+    path: '/acomodacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHospedagensIdRoute =
+  AuthenticatedHospedagensIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedHospedagensRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/precadastro': typeof PrecadastroRoute
+  '/acomodacoes': typeof AuthenticatedAcomodacoesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/documentos': typeof AuthenticatedDocumentosRoute
+  '/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
+  '/painel': typeof AuthenticatedPainelRoute
+  '/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
+  '/vistorias': typeof AuthenticatedVistoriasRoute
+  '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/precadastro': typeof PrecadastroRoute
+  '/acomodacoes': typeof AuthenticatedAcomodacoesRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/documentos': typeof AuthenticatedDocumentosRoute
+  '/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
+  '/painel': typeof AuthenticatedPainelRoute
+  '/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
+  '/vistorias': typeof AuthenticatedVistoriasRoute
+  '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/precadastro': typeof PrecadastroRoute
+  '/_authenticated/acomodacoes': typeof AuthenticatedAcomodacoesRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/documentos': typeof AuthenticatedDocumentosRoute
+  '/_authenticated/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
+  '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
+  '/_authenticated/vistorias': typeof AuthenticatedVistoriasRoute
+  '/_authenticated/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/precadastro'
+    | '/acomodacoes'
+    | '/configuracoes'
+    | '/documentos'
+    | '/hospedagens'
+    | '/painel'
+    | '/precadastros'
+    | '/produtos'
+    | '/vistorias'
+    | '/hospedagens/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/precadastro'
+    | '/acomodacoes'
+    | '/configuracoes'
+    | '/documentos'
+    | '/hospedagens'
+    | '/painel'
+    | '/precadastros'
+    | '/produtos'
+    | '/vistorias'
+    | '/hospedagens/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/precadastro'
+    | '/_authenticated/acomodacoes'
+    | '/_authenticated/configuracoes'
+    | '/_authenticated/documentos'
+    | '/_authenticated/hospedagens'
+    | '/_authenticated/painel'
+    | '/_authenticated/precadastros'
+    | '/_authenticated/produtos'
+    | '/_authenticated/vistorias'
+    | '/_authenticated/hospedagens/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  PrecadastroRoute: typeof PrecadastroRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/precadastro': {
+      id: '/precadastro'
+      path: '/precadastro'
+      fullPath: '/precadastro'
+      preLoaderRoute: typeof PrecadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +220,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/vistorias': {
+      id: '/_authenticated/vistorias'
+      path: '/vistorias'
+      fullPath: '/vistorias'
+      preLoaderRoute: typeof AuthenticatedVistoriasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/produtos': {
+      id: '/_authenticated/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/precadastros': {
+      id: '/_authenticated/precadastros'
+      path: '/precadastros'
+      fullPath: '/precadastros'
+      preLoaderRoute: typeof AuthenticatedPrecadastrosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/painel': {
+      id: '/_authenticated/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hospedagens': {
+      id: '/_authenticated/hospedagens'
+      path: '/hospedagens'
+      fullPath: '/hospedagens'
+      preLoaderRoute: typeof AuthenticatedHospedagensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/documentos': {
+      id: '/_authenticated/documentos'
+      path: '/documentos'
+      fullPath: '/documentos'
+      preLoaderRoute: typeof AuthenticatedDocumentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/acomodacoes': {
+      id: '/_authenticated/acomodacoes'
+      path: '/acomodacoes'
+      fullPath: '/acomodacoes'
+      preLoaderRoute: typeof AuthenticatedAcomodacoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hospedagens/$id': {
+      id: '/_authenticated/hospedagens/$id'
+      path: '/$id'
+      fullPath: '/hospedagens/$id'
+      preLoaderRoute: typeof AuthenticatedHospedagensIdRouteImport
+      parentRoute: typeof AuthenticatedHospedagensRoute
+    }
   }
 }
 
+interface AuthenticatedHospedagensRouteChildren {
+  AuthenticatedHospedagensIdRoute: typeof AuthenticatedHospedagensIdRoute
+}
+
+const AuthenticatedHospedagensRouteChildren: AuthenticatedHospedagensRouteChildren =
+  {
+    AuthenticatedHospedagensIdRoute: AuthenticatedHospedagensIdRoute,
+  }
+
+const AuthenticatedHospedagensRouteWithChildren =
+  AuthenticatedHospedagensRoute._addFileChildren(
+    AuthenticatedHospedagensRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAcomodacoesRoute: typeof AuthenticatedAcomodacoesRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedDocumentosRoute: typeof AuthenticatedDocumentosRoute
+  AuthenticatedHospedagensRoute: typeof AuthenticatedHospedagensRouteWithChildren
+  AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedPrecadastrosRoute: typeof AuthenticatedPrecadastrosRoute
+  AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
+  AuthenticatedVistoriasRoute: typeof AuthenticatedVistoriasRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAcomodacoesRoute: AuthenticatedAcomodacoesRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedDocumentosRoute: AuthenticatedDocumentosRoute,
+  AuthenticatedHospedagensRoute: AuthenticatedHospedagensRouteWithChildren,
+  AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedPrecadastrosRoute: AuthenticatedPrecadastrosRoute,
+  AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
+  AuthenticatedVistoriasRoute: AuthenticatedVistoriasRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  PrecadastroRoute: PrecadastroRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
