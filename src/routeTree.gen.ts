@@ -22,6 +22,7 @@ import { Route as AuthenticatedDocumentosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedAcomodacoesRouteImport } from './routes/_authenticated/acomodacoes'
 import { Route as AuthenticatedVistoriasIdRouteImport } from './routes/_authenticated/vistorias.$id'
+import { Route as AuthenticatedPrecadastrosIdRouteImport } from './routes/_authenticated/precadastros.$id'
 import { Route as AuthenticatedHospedagensIdRouteImport } from './routes/_authenticated/hospedagens.$id'
 
 const PrecadastroRoute = PrecadastroRouteImport.update({
@@ -93,6 +94,12 @@ const AuthenticatedVistoriasIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedVistoriasRoute,
   } as any)
+const AuthenticatedPrecadastrosIdRoute =
+  AuthenticatedPrecadastrosIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedPrecadastrosRoute,
+  } as any)
 const AuthenticatedHospedagensIdRoute =
   AuthenticatedHospedagensIdRouteImport.update({
     id: '/$id',
@@ -109,10 +116,11 @@ export interface FileRoutesByFullPath {
   '/documentos': typeof AuthenticatedDocumentosRoute
   '/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
   '/painel': typeof AuthenticatedPainelRoute
-  '/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/precadastros': typeof AuthenticatedPrecadastrosRouteWithChildren
   '/produtos': typeof AuthenticatedProdutosRoute
   '/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/precadastros/$id': typeof AuthenticatedPrecadastrosIdRoute
   '/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRoutesByTo {
@@ -124,10 +132,11 @@ export interface FileRoutesByTo {
   '/documentos': typeof AuthenticatedDocumentosRoute
   '/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
   '/painel': typeof AuthenticatedPainelRoute
-  '/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/precadastros': typeof AuthenticatedPrecadastrosRouteWithChildren
   '/produtos': typeof AuthenticatedProdutosRoute
   '/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/precadastros/$id': typeof AuthenticatedPrecadastrosIdRoute
   '/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRoutesById {
@@ -141,10 +150,11 @@ export interface FileRoutesById {
   '/_authenticated/documentos': typeof AuthenticatedDocumentosRoute
   '/_authenticated/hospedagens': typeof AuthenticatedHospedagensRouteWithChildren
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
-  '/_authenticated/precadastros': typeof AuthenticatedPrecadastrosRoute
+  '/_authenticated/precadastros': typeof AuthenticatedPrecadastrosRouteWithChildren
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/vistorias': typeof AuthenticatedVistoriasRouteWithChildren
   '/_authenticated/hospedagens/$id': typeof AuthenticatedHospedagensIdRoute
+  '/_authenticated/precadastros/$id': typeof AuthenticatedPrecadastrosIdRoute
   '/_authenticated/vistorias/$id': typeof AuthenticatedVistoriasIdRoute
 }
 export interface FileRouteTypes {
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vistorias'
     | '/hospedagens/$id'
+    | '/precadastros/$id'
     | '/vistorias/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/produtos'
     | '/vistorias'
     | '/hospedagens/$id'
+    | '/precadastros/$id'
     | '/vistorias/$id'
   id:
     | '__root__'
@@ -193,6 +205,7 @@ export interface FileRouteTypes {
     | '/_authenticated/produtos'
     | '/_authenticated/vistorias'
     | '/_authenticated/hospedagens/$id'
+    | '/_authenticated/precadastros/$id'
     | '/_authenticated/vistorias/$id'
   fileRoutesById: FileRoutesById
 }
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVistoriasIdRouteImport
       parentRoute: typeof AuthenticatedVistoriasRoute
     }
+    '/_authenticated/precadastros/$id': {
+      id: '/_authenticated/precadastros/$id'
+      path: '/$id'
+      fullPath: '/precadastros/$id'
+      preLoaderRoute: typeof AuthenticatedPrecadastrosIdRouteImport
+      parentRoute: typeof AuthenticatedPrecadastrosRoute
+    }
     '/_authenticated/hospedagens/$id': {
       id: '/_authenticated/hospedagens/$id'
       path: '/$id'
@@ -320,6 +340,20 @@ const AuthenticatedHospedagensRouteWithChildren =
     AuthenticatedHospedagensRouteChildren,
   )
 
+interface AuthenticatedPrecadastrosRouteChildren {
+  AuthenticatedPrecadastrosIdRoute: typeof AuthenticatedPrecadastrosIdRoute
+}
+
+const AuthenticatedPrecadastrosRouteChildren: AuthenticatedPrecadastrosRouteChildren =
+  {
+    AuthenticatedPrecadastrosIdRoute: AuthenticatedPrecadastrosIdRoute,
+  }
+
+const AuthenticatedPrecadastrosRouteWithChildren =
+  AuthenticatedPrecadastrosRoute._addFileChildren(
+    AuthenticatedPrecadastrosRouteChildren,
+  )
+
 interface AuthenticatedVistoriasRouteChildren {
   AuthenticatedVistoriasIdRoute: typeof AuthenticatedVistoriasIdRoute
 }
@@ -340,7 +374,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentosRoute: typeof AuthenticatedDocumentosRoute
   AuthenticatedHospedagensRoute: typeof AuthenticatedHospedagensRouteWithChildren
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
-  AuthenticatedPrecadastrosRoute: typeof AuthenticatedPrecadastrosRoute
+  AuthenticatedPrecadastrosRoute: typeof AuthenticatedPrecadastrosRouteWithChildren
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedVistoriasRoute: typeof AuthenticatedVistoriasRouteWithChildren
 }
@@ -351,7 +385,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentosRoute: AuthenticatedDocumentosRoute,
   AuthenticatedHospedagensRoute: AuthenticatedHospedagensRouteWithChildren,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
-  AuthenticatedPrecadastrosRoute: AuthenticatedPrecadastrosRoute,
+  AuthenticatedPrecadastrosRoute: AuthenticatedPrecadastrosRouteWithChildren,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedVistoriasRoute: AuthenticatedVistoriasRouteWithChildren,
 }

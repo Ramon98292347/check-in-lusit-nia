@@ -32,7 +32,7 @@ function Index() {
               <div>
                 <h1 className="font-serif text-4xl text-foreground">Check-in Lusitânia</h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Escolha abaixo se você é hóspede e deseja preencher o pré-cadastro ou se vai acessar a área interna da pousada.
+                  Formulário simples para o hóspede preencher o pré-cadastro e a pousada acompanhar as confirmações.
                 </p>
               </div>
             </div>
@@ -70,7 +70,7 @@ function Index() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Acesso de funcionários e administradores para gestão de pré-cadastros, hospedagens, vistorias e check-out.
+                Acesso interno para consultar os pré-cadastros recebidos e confirmar as entradas.
               </p>
               <Button asChild variant="outline" className="w-full" size="lg">
                 <Link to="/auth">Entrar no sistema</Link>

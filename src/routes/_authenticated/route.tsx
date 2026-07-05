@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar, MobileBottomNav } from "@/components/layout/AppSidebar";
+import { AppSidebar, DesktopHeaderNav, MobileBottomNav } from "@/components/layout/AppSidebar";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,12 +104,15 @@ function AuthenticatedLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar />
+        <div className="md:hidden">
+          <AppSidebar />
+        </div>
         <SidebarInset className="flex-1">
           <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/70 px-4 backdrop-blur">
-            <SidebarTrigger className="hidden md:inline-flex" />
+            <SidebarTrigger className="inline-flex md:hidden" />
             <div className="min-w-0 flex-1 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
-            <Avatar className="h-9 w-9 border border-border/70 bg-primary/5">
+            <DesktopHeaderNav />
+            <Avatar className="h-9 w-9 border border-border/70 bg-primary/5 md:hidden">
               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                 {userInitials}
               </AvatarFallback>

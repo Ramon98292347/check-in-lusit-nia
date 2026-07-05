@@ -2,10 +2,6 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   ClipboardList,
-  BedDouble,
-  ClipboardCheck,
-  FileText,
-  Settings,
   LogOut,
 } from "lucide-react";
 import {
@@ -22,16 +18,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const logoUrl = "/logo.png";
 
-const items = [
+export const items = [
   { title: "Painel", url: "/painel", icon: LayoutDashboard },
-  { title: "Pré-cadastros", url: "/precadastros", icon: ClipboardList },
-  { title: "Hospedagens", url: "/hospedagens", icon: BedDouble },
-  { title: "Vistorias", url: "/vistorias", icon: ClipboardCheck },
-  { title: "Documentos", url: "/documentos", icon: FileText },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Ficha de Hóspede", url: "/precadastros", icon: ClipboardList },
 ];
 
 export function AppSidebar() {
@@ -113,7 +107,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 md:hidden">
-      <div className="grid grid-cols-7 gap-2 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="grid grid-cols-3 gap-2 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3">
         {items.map((it) => {
           const active = path === it.url || path.startsWith(it.url + "/");
           return (
@@ -146,5 +140,67 @@ export function MobileBottomNav() {
         </button>
       </div>
     </nav>
+  );
+}
+
+export function DesktopHeaderNav() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  const { signOut, user, role } = useAuth();
+  const navigate = useNavigate();
+  const userInitials = user?.nome
+    ?.split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CL";
+
+  return (
+    <div className="hidden items-center gap-3 md:flex">
+      <nav className="flex items-center gap-2 rounded-full border border-border/70 bg-background/80 p-1">
+        {items.map((it) => {
+          const active = path === it.url || path.startsWith(it.url + "/");
+          return (
+            <Link
+              key={it.url}
+              to={it.url}
+              className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              <it.icon className="h-4 w-4" />
+              <span>{it.title}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/80 px-3 py-2">
+        <Avatar className="h-9 w-9 border border-border/70 bg-primary/5">
+          <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+            {userInitials}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <div className="max-w-32 truncate text-sm font-medium">{user?.nome}</div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {role === "administrador" ? "Administrador" : "Funcionário"}
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            await signOut();
+            navigate({ to: "/auth" });
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </div>
   );
 }

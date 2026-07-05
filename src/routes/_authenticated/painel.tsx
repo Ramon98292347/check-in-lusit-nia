@@ -3,67 +3,45 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatters";
-import { ClipboardList, LogIn, BedDouble, LogOut, ClipboardCheck, ArrowRight, ExternalLink, SearchCheck } from "lucide-react";
+import { ClipboardList, LogIn, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: Painel,
 });
 
 function Painel() {
-  const [stats, setStats] = useState({ pre: 0, ins: 0, hosp: 0, outs: 0, vist: 0 });
-  const [proximosCheckin, setProximosCheckin] = useState<any[]>([]);
-  const [checkoutsHoje, setCheckoutsHoje] = useState<any[]>([]);
-  const [vistoriasPend, setVistoriasPend] = useState<any[]>([]);
+  const [stats, setStats] = useState({ pre: 0, confirmados: 0 });
+  const [proximosCadastros, setProximosCadastros] = useState<any[]>([]);
 
   useEffect(() => {
     const hoje = new Date().toISOString().slice(0, 10);
+    const inicioHoje = `${hoje}T00:00:00`;
 
     (async () => {
-      const [pre, ins, hosp, outs, vist] = await Promise.all([
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("status", "pre_cadastro"),
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("checkin", hoje).in("status", ["pre_cadastro", "checkin_confirmado"]),
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("status", "hospedado"),
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("checkout", hoje).in("status", ["hospedado", "vistoria_pendente", "vistoria_realizada"]),
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).in("status", ["hospedado", "vistoria_pendente"]).lte("checkout", hoje),
+      const [pre, confirmados] = await Promise.all([
+        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro"),
+        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro").eq("checkin", hoje),
       ]);
       setStats({
         pre: pre.count || 0,
-        ins: ins.count || 0,
-        hosp: hosp.count || 0,
-        outs: outs.count || 0,
-        vist: vist.count || 0,
+        confirmados: confirmados.count || 0,
       });
 
       const { data: proximos } = await supabase
         .from("hospedagens")
-        .select("id, checkin, checkout, status, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
-        .gte("checkin", hoje)
-        .in("status", ["pre_cadastro", "checkin_confirmado"])
-        .order("checkin").limit(5);
-      setProximosCheckin(proximos || []);
-
-      const { data: outsData } = await supabase
-        .from("hospedagens")
-        .select("id, checkin, checkout, status, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
-        .eq("checkout", hoje).limit(5);
-      setCheckoutsHoje(outsData || []);
-
-      const { data: vistData } = await supabase
-        .from("hospedagens")
-        .select("id, checkin, checkout, status, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
-        .in("status", ["hospedado", "vistoria_pendente"]).lte("checkout", hoje).limit(5);
-      setVistoriasPend(vistData || []);
+        .select("id, checkin, checkout, criado_em, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
+        .eq("origem", "pre_cadastro")
+        .gte("criado_em", inicioHoje)
+        .order("criado_em", { ascending: false })
+        .limit(5);
+      setProximosCadastros(proximos || []);
     })();
   }, []);
 
   const cards = [
     { label: "Pré-cadastros pendentes", value: stats.pre, icon: ClipboardList, color: "text-amber-600" },
-    { label: "Check-ins de hoje", value: stats.ins, icon: LogIn, color: "text-primary" },
-    { label: "Hóspedes hospedados", value: stats.hosp, icon: BedDouble, color: "text-forest" },
-    { label: "Check-outs de hoje", value: stats.outs, icon: LogOut, color: "text-blue-600" },
-    { label: "Vistorias pendentes", value: stats.vist, icon: ClipboardCheck, color: "text-orange-600" },
+    { label: "Entradas para hoje", value: stats.confirmados, icon: LogIn, color: "text-primary" },
   ];
 
   return (
@@ -73,43 +51,20 @@ function Painel() {
         <p className="text-muted-foreground text-sm">Visão geral de hoje na pousada</p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-1 lg:max-w-xl">
         <Card className="border-border/60 shadow-soft">
-          <CardContent className="flex items-center justify-between gap-4 pt-6">
-            <div>
-              <div className="text-sm font-medium text-foreground">Cadastro público</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Abra o formulário público para preenchimento do hóspede.
-              </p>
-            </div>
+          <CardContent className="flex justify-end pt-6">
             <Button asChild>
               <Link to="/precadastro">
                 <ExternalLink className="h-4 w-4" />
-                Abrir cadastro
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 shadow-soft">
-          <CardContent className="flex items-center justify-between gap-4 pt-6">
-            <div>
-              <div className="text-sm font-medium text-foreground">Vistorias</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Acesse rapidamente a lista de hospedagens para vistoria.
-              </p>
-            </div>
-            <Button asChild variant="outline">
-              <Link to="/vistorias">
-                <SearchCheck className="h-4 w-4" />
-                Abrir vistoria
+                Criar cadastro
               </Link>
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid max-w-xl grid-cols-2 gap-3">
         {cards.map((c) => (
           <Card key={c.label} className="shadow-soft">
             <CardContent className="pt-6">
@@ -125,41 +80,40 @@ function Painel() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
-        <ListaRapida titulo="Próximos check-ins" itens={proximosCheckin} acao="Confirmar check-in" />
-        <ListaRapida titulo="Check-outs do dia" itens={checkoutsHoje} acao="Ver detalhes" />
-        <ListaRapida titulo="Vistorias pendentes" itens={vistoriasPend} acao="Fazer vistoria" />
+      <div className="grid gap-4 lg:max-w-3xl">
+        <ListaRapida titulo="Nova Ficha de Hóspede" itens={proximosCadastros} />
       </div>
     </div>
   );
 }
 
-function ListaRapida({ titulo, itens, acao }: { titulo: string; itens: any[]; acao: string }) {
+function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
   return (
     <Card>
       <CardHeader><CardTitle className="text-base font-serif">{titulo}</CardTitle></CardHeader>
       <CardContent className="space-y-2">
         {itens.length === 0 && <p className="text-sm text-muted-foreground">Nenhum item.</p>}
         {itens.map((h) => (
-          <div key={h.id} className="p-3 rounded-lg border bg-card hover:bg-muted/40 transition">
+          <Link
+            key={h.id}
+            to="/precadastros/$id"
+            params={{ id: h.id }}
+            className="block rounded-lg border bg-card p-3 transition hover:bg-muted/40"
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-medium truncate">{h.hospede?.nome || "—"}</div>
                 <div className="text-xs text-muted-foreground truncate">{h.acomodacao?.nome} · {formatDate(h.checkin)} → {formatDate(h.checkout)}</div>
-                <div className="mt-1"><StatusBadge status={h.status} /></div>
+                <div className="text-xs text-muted-foreground">Recebido hoje</div>
               </div>
-              <Button asChild size="sm" variant="ghost">
-                <Link to="/hospedagens/$id" params={{ id: h.id }}>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                Abrir ficha
+              </span>
             </div>
-            <div className="mt-2">
-              <Button asChild size="sm" variant="outline" className="w-full">
-                <Link to="/hospedagens/$id" params={{ id: h.id }}>{acao}</Link>
-              </Button>
+            <div className="mt-2 text-xs text-muted-foreground">
+              Toque para abrir os dados completos da ficha.
             </div>
-          </div>
+          </Link>
         ))}
       </CardContent>
     </Card>
