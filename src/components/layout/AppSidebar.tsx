@@ -111,7 +111,7 @@ export function MobileBottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85 md:hidden">
-      <div className="grid grid-cols-3 gap-2 px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="grid grid-cols-3 gap-1.5 px-2 pb-[max(0.45rem,env(safe-area-inset-bottom))] pt-2">
         {items.map((it) => {
           const active = path === it.url || path.startsWith(it.url + "/");
           return (
@@ -120,13 +120,14 @@ export function MobileBottomNav() {
               to={it.url}
               title={it.title}
               aria-label={it.title}
-              className={`flex min-h-16 flex-col items-center justify-center rounded-xl px-1 text-[11px] font-medium transition ${
+              className={`flex min-h-14 flex-col items-center justify-center rounded-xl px-1 py-1 text-[10px] font-medium transition ${
                 active
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
               }`}
             >
               <it.icon className="h-5 w-5 shrink-0" />
+              <span className="mt-1 truncate leading-none">{it.title}</span>
             </Link>
           );
         })}
@@ -138,9 +139,10 @@ export function MobileBottomNav() {
             await signOut();
             navigate({ to: "/auth" });
           }}
-          className="flex min-h-16 flex-col items-center justify-center rounded-xl px-1 text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+          className="flex min-h-14 flex-col items-center justify-center rounded-xl px-1 py-1 text-[10px] text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
         >
           <LogOut className="h-5 w-5 shrink-0" />
+          <span className="mt-1 leading-none">Sair</span>
         </button>
       </div>
     </nav>

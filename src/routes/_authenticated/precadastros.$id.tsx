@@ -121,15 +121,15 @@ function DetalhesPrecCadastro() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Button asChild variant="ghost" size="sm">
           <Link to="/precadastros">
             <ArrowLeft className="mr-1 h-4 w-4" />
             Voltar
           </Link>
         </Button>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button
             variant="outline"
             onClick={() => printableRef.current && printElement(printableRef.current, `Pre-cadastro - ${registro.hospede?.nome || registro.id}`)}
@@ -140,11 +140,13 @@ function DetalhesPrecCadastro() {
         </div>
       </div>
 
-      <div
-        ref={printableRef}
-        className="mx-auto"
-        dangerouslySetInnerHTML={{ __html: fichaHtml }}
-      />
+      <div className="w-full overflow-x-auto pb-4">
+        <div
+          ref={printableRef}
+          className="mx-auto w-fit"
+          dangerouslySetInnerHTML={{ __html: fichaHtml }}
+        />
+      </div>
     </div>
   );
 }
@@ -199,7 +201,25 @@ function gerarFichaHtml(dados: {
   }
 
   return `
-    <div style="width:210mm; min-height:297mm; margin:0 auto; padding:7mm; background:#fff; font-family:Arial, Helvetica, sans-serif; color:#333;">
+    <style>
+      @media screen and (max-width: 768px) {
+        .ficha-root {
+          transform: scale(0.74);
+          transform-origin: top center;
+        }
+      }
+      @media screen and (max-width: 480px) {
+        .ficha-root {
+          transform: scale(0.62);
+        }
+      }
+      @media print {
+        .ficha-root {
+          transform: none;
+        }
+      }
+    </style>
+    <div class="ficha-root" style="width:210mm; min-height:297mm; margin:0 auto; padding:7mm; background:#fff; font-family:Arial, Helvetica, sans-serif; color:#333;">
       <div style="width:100%; border:0.5px solid #333; border-radius:5px; overflow:hidden; margin-bottom:6mm;">
         <table style="width:100%; border-collapse:collapse; table-layout:fixed; border-bottom:0.45px solid #333;">
           <tr>

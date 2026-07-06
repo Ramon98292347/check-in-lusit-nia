@@ -108,9 +108,11 @@ function AuthenticatedLayout() {
           <AppSidebar />
         </div>
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-card/70 px-4 backdrop-blur">
+          <header className="sticky top-0 z-20 flex h-13 items-center gap-2 border-b bg-card/80 px-3 backdrop-blur md:px-4">
             <SidebarTrigger className="inline-flex md:hidden" />
-            <div className="min-w-0 flex-1 font-serif text-base text-foreground md:text-lg">Check-in Lusitânia</div>
+            <div className="min-w-0 flex-1 truncate font-serif text-sm text-foreground md:text-lg">
+              Check-in Lusitânia
+            </div>
             <DesktopHeaderNav />
             <Avatar className="h-9 w-9 border border-border/70 bg-primary/5 md:hidden">
               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -118,7 +120,7 @@ function AuthenticatedLayout() {
               </AvatarFallback>
             </Avatar>
           </header>
-          <main className="mx-auto w-full max-w-7xl flex-1 p-3 pb-24 md:p-6 md:pb-6">
+          <main className="mx-auto w-full max-w-full flex-1 p-2 pb-24 sm:p-3 md:max-w-7xl md:p-6 md:pb-6">
             <Outlet />
           </main>
           <MobileBottomNav />
