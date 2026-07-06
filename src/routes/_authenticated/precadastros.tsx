@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { formatDate, formatCPF, formatPhone } from "@/utils/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { usePreCadastroAutoRefresh } from "@/hooks/usePreCadastroAutoRefresh";
 
 export const Route = createFileRoute("/_authenticated/precadastros")({
   component: PreCadastros,
@@ -48,15 +49,15 @@ function PreCadastros() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isDetalhe = /^\/precadastros\/[^/]+$/.test(pathname);
 
-  const carregar = async () => {
+  const carregar = useCallback(async () => {
     const { data } = await supabase
       .from("hospedagens")
-      .select("id, checkin, checkout, adultos, criancas, criado_em, hospede:hospedes(nome, cpf, telefone), acomodacao:acomodacoes(nome)")
+      .select("id, checkin, checkout, adultos, criancas, criado_em, hospede:hospedes(nome, cpf, telefone), acomodacao:acomodacoes(nome), acomodacao_texto")
       .eq("origem", "pre_cadastro")
       .order("criado_em", { ascending: false });
 
     setRows(data || []);
-  };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -75,8 +76,10 @@ function PreCadastros() {
   };
 
   useEffect(() => {
-    carregar();
-  }, []);
+    void carregar();
+  }, [carregar]);
+
+  usePreCadastroAutoRefresh({ onRefresh: carregar, enabled: !isDetalhe });
 
   const abrirEdicao = async (id: string) => {
     const { data: hospedagem, error } = await supabase.from("hospedagens").select("*").eq("id", id).maybeSingle();
@@ -290,7 +293,7 @@ function PreCadastros() {
                   <TableCell className="font-medium">{r.hospede?.nome || "—"}</TableCell>
                   <TableCell>{formatCPF(r.hospede?.cpf)}</TableCell>
                   <TableCell>{formatPhone(r.hospede?.telefone)}</TableCell>
-                  <TableCell>{r.acomodacao?.nome || "—"}</TableCell>
+                  <TableCell>{r.acomodacao_texto || r.acomodacao?.nome || "—"}</TableCell>
                   <TableCell>{formatDate(r.checkin)}</TableCell>
                   <TableCell>{formatDate(r.checkout)}</TableCell>
                   <TableCell className="text-center">{r.adultos}</TableCell>

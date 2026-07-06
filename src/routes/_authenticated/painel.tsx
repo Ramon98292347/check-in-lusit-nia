@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/formatters";
 import { ClipboardList, Copy, ExternalLink, Share2 } from "lucide-react";
+import { usePreCadastroAutoRefresh } from "@/hooks/usePreCadastroAutoRefresh";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: Painel,
@@ -16,32 +17,36 @@ function Painel() {
   const [publicUrl, setPublicUrl] = useState("/precadastro");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
+  const carregar = useCallback(async () => {
     const hoje = new Date().toISOString().slice(0, 10);
     const inicioHoje = `${hoje}T00:00:00`;
 
-    (async () => {
-      const [pre] = await Promise.all([
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro"),
-      ]);
-      setStats({
-        pre: pre.count || 0,
-      });
+    const [pre] = await Promise.all([
+      supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro"),
+    ]);
+    setStats({
+      pre: pre.count || 0,
+    });
 
-      const { data: proximos } = await supabase
-        .from("hospedagens")
-        .select("id, checkin, checkout, criado_em, hospede:hospedes(nome), acomodacao:acomodacoes(nome)")
-        .eq("origem", "pre_cadastro")
-        .gte("criado_em", inicioHoje)
-        .order("criado_em", { ascending: false })
-        .limit(5);
-      setProximosCadastros(proximos || []);
-    })();
+    const { data: proximos } = await supabase
+      .from("hospedagens")
+      .select("id, checkin, checkout, criado_em, hospede:hospedes(nome), acomodacao:acomodacoes(nome), acomodacao_texto")
+      .eq("origem", "pre_cadastro")
+      .gte("criado_em", inicioHoje)
+      .order("criado_em", { ascending: false })
+      .limit(5);
+    setProximosCadastros(proximos || []);
+  }, []);
+
+  useEffect(() => {
+    void carregar();
 
     if (typeof window !== "undefined") {
       setPublicUrl(`${window.location.origin}/precadastro`);
     }
-  }, []);
+  }, [carregar]);
+
+  usePreCadastroAutoRefresh({ onRefresh: carregar });
 
   const copiarLink = async () => {
     await navigator.clipboard.writeText(publicUrl);
@@ -139,7 +144,7 @@ function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-medium truncate">{h.hospede?.nome || "—"}</div>
-                <div className="text-xs text-muted-foreground truncate">{h.acomodacao?.nome} · {formatDate(h.checkin)} → {formatDate(h.checkout)}</div>
+                <div className="text-xs text-muted-foreground truncate">{h.acomodacao_texto || h.acomodacao?.nome || "—"} · {formatDate(h.checkin)} → {formatDate(h.checkout)}</div>
                 <div className="text-xs text-muted-foreground">Recebido hoje</div>
               </div>
               <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
