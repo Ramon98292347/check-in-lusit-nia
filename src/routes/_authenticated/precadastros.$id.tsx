@@ -93,7 +93,7 @@ function DetalhesPrecCadastro() {
   const dataVazia = "__/___/_____";
   const fichaHtml = gerarFichaHtml({
     logoUrl,
-    acomodacao: displayText(registro.acomodacao?.nome),
+    acomodacao: displayText(registro.acomodacao_texto || registro.acomodacao?.nome),
     checkin: displayDate(registro.checkin, dataVazia),
     checkout: displayDate(registro.checkout, dataVazia),
     adultos: displayText(registro.adultos),

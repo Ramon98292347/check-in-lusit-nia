@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
@@ -43,7 +42,7 @@ export const Route = createFileRoute("/precadastro")({
 });
 
 const schema = z.object({
-  acomodacao_id: z.string().optional().or(z.literal("")),
+  acomodacao_texto: z.string().trim().max(120, "Acomodação muito longa").optional().or(z.literal("")),
   checkin: z.string().min(1, "Data de check-in obrigatória"),
   checkout: z.string().min(1, "Data de check-out obrigatória"),
   adultos: z.number().min(1, "Mínimo 1 adulto"),
@@ -86,7 +85,6 @@ type EnvioInfo =
     };
 
 function PreCadastroPublico() {
-  const [acomodacoes, setAcomodacoes] = useState<any[]>([]);
   const [enviado, setEnviado] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelando, setCancelando] = useState(false);
@@ -96,15 +94,13 @@ function PreCadastroPublico() {
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { acomodacao_id: "", adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
+    defaultValues: { acomodacao_texto: "", adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "acompanhantes" });
   const cepValue = watch("cep") || "";
 
   useEffect(() => {
-    supabase.from("acomodacoes").select("id, nome, valor_diaria").eq("ativo", true).order("nome")
-      .then(({ data }) => setAcomodacoes(data || []));
     setOfflinePendentes(getOfflinePrecCadastroCount());
   }, []);
 
@@ -168,16 +164,13 @@ function PreCadastroPublico() {
           payload,
         });
       } else {
-        const acom = values.acomodacao_id
-          ? acomodacoes.find((a) => a.id === values.acomodacao_id) || null
-          : null;
-        const result = await submitPrecCadastroOnline(payload, acom);
+        const result = await submitPrecCadastroOnline(payload);
         setEnvioInfo({
           tipo: "online",
           hospedagemId: result.hospedagemId,
           hospedeId: result.hospedeId,
           payload,
-          acomodacaoNome: result.acomodacao?.nome || "",
+          acomodacaoNome: result.acomodacao?.nome || values.acomodacao_texto || "",
           qtd: result.qtd,
           valorDiaria: Number(result.valor_diaria || 0),
         });
@@ -215,18 +208,18 @@ function PreCadastroPublico() {
           hospedagem_id: envioInfo.hospedagemId,
           evento: "mudanca_status",
           status: "cancelado",
-          payload: payloadEventoHospedagem({
-            evento: "mudanca_status",
-            status: "cancelado",
-            hospedagem: {
-              id: envioInfo.hospedagemId,
-              hospede_id: envioInfo.hospedeId,
-              acomodacao_id: envioInfo.payload.acomodacao_id,
-              acomodacao_nome: envioInfo.acomodacaoNome,
-              checkin: envioInfo.payload.checkin,
-              checkout: envioInfo.payload.checkout,
-              adultos: envioInfo.payload.adultos,
-              criancas: envioInfo.payload.criancas,
+            payload: payloadEventoHospedagem({
+              evento: "mudanca_status",
+              status: "cancelado",
+              hospedagem: {
+                id: envioInfo.hospedagemId,
+                hospede_id: envioInfo.hospedeId,
+                acomodacao_texto: envioInfo.payload.acomodacao_texto,
+                acomodacao_nome: envioInfo.acomodacaoNome,
+                checkin: envioInfo.payload.checkin,
+                checkout: envioInfo.payload.checkout,
+                adultos: envioInfo.payload.adultos,
+                criancas: envioInfo.payload.criancas,
               qtd_diarias: envioInfo.qtd,
               valor_diaria: envioInfo.valorDiaria,
               valor_hospedagem: envioInfo.qtd * envioInfo.valorDiaria,
@@ -319,21 +312,29 @@ function PreCadastroPublico() {
         <Card className="shadow-elegant">
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-base font-semibold">CEP *</Label>
+                {cepLoading && <p className="text-xs text-muted-foreground">Buscando endereço...</p>}
+              </div>
+              <Input
+                maxLength={9}
+                inputMode="numeric"
+                placeholder="00000-000"
+                className="border-primary/30 bg-background"
+                {...register("cep", {
+                  onChange: (e) => setValue("cep", formatCEPInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
+                })}
+              />
+              {errors.cep && <p className="text-xs text-destructive">{errors.cep.message}</p>}
+              <p className="text-xs text-muted-foreground">Preencha primeiro para ajudar a completar o endereço automaticamente.</p>
+            </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Acomodação</Label>
-              <Select
-                value={watch("acomodacao_id") || "__none__"}
-                onValueChange={(v) => setValue("acomodacao_id", v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione a acomodação" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Não informar agora</SelectItem>
-                  {acomodacoes.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.acomodacao_id && <p className="text-xs text-destructive">{errors.acomodacao_id.message}</p>}
+              <Input
+                placeholder="Ex.: Chalé Madeira"
+                {...register("acomodacao_texto")}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Check-in *</Label>
@@ -405,21 +406,9 @@ function PreCadastroPublico() {
                 <Input maxLength={2} {...register("uf")} />
               </div>
               <div className="space-y-1.5">
-                <Label>CEP</Label>
-                <Input
-                  maxLength={9}
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                  {...register("cep", {
-                    onChange: (e) => setValue("cep", formatCEPInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
-                  })}
-                />
-                {cepLoading && <p className="text-xs text-muted-foreground">Buscando endereço pelo CEP...</p>}
+                <Label>Placa</Label>
+                <Input {...register("placa_veiculo")} placeholder="ABC1D23" />
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Placa do veículo</Label>
-              <Input {...register("placa_veiculo")} placeholder="ABC1D23" />
             </div>
           </CardContent>
         </Card>

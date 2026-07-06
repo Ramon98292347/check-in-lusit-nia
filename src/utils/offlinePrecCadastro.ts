@@ -12,7 +12,7 @@ type AcompanhanteInput = {
 };
 
 export type PrecadastroOfflineInput = {
-  acomodacao_id?: string;
+  acomodacao_texto?: string;
   checkin: string;
   checkout: string;
   adultos: number;
@@ -85,15 +85,18 @@ export async function submitPrecCadastroOnline(
   const hospedeId = crypto.randomUUID();
   const hospedagemId = crypto.randomUUID();
 
-  const acomodacao = values.acomodacao_id
-    ? cachedAcomodacao ?? (
-        await supabase
-          .from("acomodacoes")
-          .select("id, nome, valor_diaria")
-          .eq("id", values.acomodacao_id)
-          .maybeSingle()
-      ).data
-    : null;
+  const acomodacaoTexto = values.acomodacao_texto?.trim() || "";
+  const acomodacao =
+    cachedAcomodacao ??
+    (acomodacaoTexto
+      ? (
+          await supabase
+            .from("acomodacoes")
+            .select("id, nome, valor_diaria")
+            .eq("nome", acomodacaoTexto)
+            .maybeSingle()
+        ).data
+      : null);
 
   const { error: e1 } = await supabase.from("hospedes").insert({
     id: hospedeId,
@@ -116,7 +119,8 @@ export async function submitPrecCadastroOnline(
   const { error: e2 } = await supabase.from("hospedagens").insert({
     id: hospedagemId,
     hospede_id: hospedeId,
-    acomodacao_id: values.acomodacao_id || null,
+    acomodacao_id: acomodacao?.id || null,
+    acomodacao_texto: acomodacaoTexto || acomodacao?.nome || null,
     checkin: values.checkin,
     checkout: values.checkout,
     adultos: values.adultos,
@@ -154,8 +158,9 @@ export async function submitPrecCadastroOnline(
       hospedagem: {
         id: hospedagemId,
         hospede_id: hospedeId,
-        acomodacao_id: values.acomodacao_id || null,
-        acomodacao_nome: acomodacao?.nome ?? "",
+        acomodacao_id: acomodacao?.id || null,
+        acomodacao_texto: acomodacaoTexto || acomodacao?.nome || "",
+        acomodacao_nome: acomodacao?.nome || acomodacaoTexto || "",
         checkin: values.checkin,
         checkout: values.checkout,
         adultos: values.adultos,
