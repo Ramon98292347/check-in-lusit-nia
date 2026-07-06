@@ -116,7 +116,7 @@ function PreCadastros() {
       const { error: errorHospedagem } = await supabase
         .from("hospedagens")
         .update({
-          acomodacao_id: editForm.acomodacao_id,
+          acomodacao_id: editForm.acomodacao_id || null,
           checkin: editForm.checkin,
           checkout: editForm.checkout,
           adultos: Number(editForm.adultos || 1),
@@ -292,9 +292,13 @@ function PreCadastros() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2 space-y-1.5">
               <Label>Acomodação</Label>
-              <Select value={editForm.acomodacao_id} onValueChange={(value) => setEditForm((prev: any) => ({ ...prev, acomodacao_id: value }))}>
+              <Select
+                value={editForm.acomodacao_id || "__none__"}
+                onValueChange={(value) => setEditForm((prev: any) => ({ ...prev, acomodacao_id: value === "__none__" ? "" : value }))}
+              >
                 <SelectTrigger><SelectValue placeholder="Selecione a acomodação" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">Não informar agora</SelectItem>
                   {acomodacoes.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
                   ))}

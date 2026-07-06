@@ -152,13 +152,20 @@ function buildControleConsumoHtml(payload: ReturnType<typeof payloadControleCons
       <div style="max-width:1040px; margin:0 auto; background:#fff; border:1px solid #444; border-radius:10px; overflow:hidden;">
         <div style="padding:0;">
           <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+            <colgroup>
+              <col style="width:19%;" />
+              <col style="width:19%;" />
+              <col style="width:19%;" />
+              <col style="width:18%;" />
+              <col style="width:25%;" />
+            </colgroup>
             <thead>
               <tr>
-                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">ACOMODAÇÃO</th>
-                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">CHECK-IN</th>
-                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">CHECK-OUT</th>
-                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">VALOR TOTAL R$</th>
-                <th style="padding:8px 6px; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">OBSERVAÇÕES</th>
+                <th style="padding:8px 5px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:21px; font-weight:700; color:#000; white-space:nowrap;">ACOMODAÇÃO</th>
+                <th style="padding:8px 5px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:21px; font-weight:700; color:#000; white-space:nowrap;">CHECK-IN</th>
+                <th style="padding:8px 5px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:21px; font-weight:700; color:#000; white-space:nowrap;">CHECK-OUT</th>
+                <th style="padding:8px 5px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:21px; font-weight:700; color:#000; white-space:nowrap;">VALOR TOTAL</th>
+                <th style="padding:8px 5px; border-bottom:1px solid #444; text-align:center; font-size:21px; font-weight:700; color:#000; white-space:nowrap;">OBSERVAÇÕES</th>
               </tr>
             </thead>
             <tbody>

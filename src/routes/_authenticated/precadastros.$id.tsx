@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCPF, formatDate, formatPhone } from "@/utils/formatters";
-import { ArrowLeft, Download, Loader2, Printer } from "lucide-react";
-import { downloadElementAsPdf, printElement } from "@/utils/pdf";
+import { ArrowLeft, Loader2, Printer } from "lucide-react";
+import { printElement } from "@/utils/pdf";
 
 const logoUrl = "/logo-lusitania.png";
 
@@ -137,13 +137,6 @@ function DetalhesPrecCadastro() {
             <Printer className="mr-1 h-4 w-4" />
             Imprimir
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => printableRef.current && downloadElementAsPdf(printableRef.current, `precadastro-${registro.hospede?.nome || registro.id}`)}
-          >
-            <Download className="mr-1 h-4 w-4" />
-            Baixar PDF
-          </Button>
         </div>
       </div>
 
@@ -158,8 +151,8 @@ function DetalhesPrecCadastro() {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(Number.isFinite(value) ? value : 0);
 }
 
@@ -290,12 +283,19 @@ function gerarFichaHtml(dados: {
 
       <div style="width:100%; border:0.5px solid #333; border-radius:5px; overflow:hidden;">
         <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+          <colgroup>
+            <col style="width:19%;" />
+            <col style="width:19%;" />
+            <col style="width:19%;" />
+            <col style="width:18%;" />
+            <col style="width:25%;" />
+          </colgroup>
           <thead>
             <tr>
               <th style="${thStyle()}">ACOMODAÇÃO</th>
               <th style="${thStyle()}">CHECK-IN</th>
               <th style="${thStyle()}">CHECK-OUT</th>
-              <th style="${thStyle()}">VALOR TOTAL R$</th>
+              <th style="${thStyle()}">VALOR TOTAL</th>
               <th style="${thStyle(false)}">OBSERVAÇÕES</th>
             </tr>
           </thead>
@@ -358,7 +358,7 @@ function valueStyle() {
 }
 
 function thStyle(borderRight = true) {
-  return `border:0.45px solid #333; border-top:none; ${borderRight ? "" : "border-right:none;"} height:12mm; font-size:15px; text-align:center; font-weight:900; color:#000; padding:4px 6px; vertical-align:middle;`;
+  return `border:0.45px solid #333; border-top:none; ${borderRight ? "" : "border-right:none;"} height:12mm; font-size:13px; text-align:center; font-weight:900; color:#000; padding:4px 5px; vertical-align:middle; white-space:nowrap;`;
 }
 
 function tdControleStyle(borderRight = true) {

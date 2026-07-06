@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/precadastro")({
 });
 
 const schema = z.object({
-  acomodacao_id: z.string().min(1, "Selecione a acomodação"),
+  acomodacao_id: z.string().optional().or(z.literal("")),
   checkin: z.string().min(1, "Data de check-in obrigatória"),
   checkout: z.string().min(1, "Data de check-out obrigatória"),
   adultos: z.number().min(1, "Mínimo 1 adulto"),
@@ -77,7 +77,7 @@ function PreCadastroPublico() {
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
+    defaultValues: { acomodacao_id: "", adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "acompanhantes" });
@@ -109,7 +109,9 @@ function PreCadastroPublico() {
           payload,
         });
       } else {
-        const acom = acomodacoes.find((a) => a.id === values.acomodacao_id) || null;
+        const acom = values.acomodacao_id
+          ? acomodacoes.find((a) => a.id === values.acomodacao_id) || null
+          : null;
         const result = await submitPrecCadastroOnline(payload, acom);
         setEnvioInfo({
           tipo: "online",
@@ -220,8 +222,8 @@ function PreCadastroPublico() {
                 {cancelando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Cancelar pré-cadastro
               </Button>
-              <Button asChild type="button">
-                <Link to="/">Voltar ao início</Link>
+              <Button type="button" onClick={() => window.location.reload()}>
+                Enviar novo formulário
               </Button>
             </div>
           </CardContent>
@@ -259,10 +261,14 @@ function PreCadastroPublico() {
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Acomodação *</Label>
-              <Select onValueChange={(v) => setValue("acomodacao_id", v)}>
+              <Label>Acomodação</Label>
+              <Select
+                value={watch("acomodacao_id") || "__none__"}
+                onValueChange={(v) => setValue("acomodacao_id", v === "__none__" ? "" : v)}
+              >
                 <SelectTrigger><SelectValue placeholder="Selecione a acomodação" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">Não informar agora</SelectItem>
                   {acomodacoes.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
                   ))}
