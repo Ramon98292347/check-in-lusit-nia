@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,17 +64,11 @@ function AuthPage() {
           <CardContent>
             <form onSubmit={(e) => { e.preventDefault(); void submit(); }} className="space-y-4">
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Acesso livre para teste interno.</p>
-                <p className="mt-2">Toque em entrar para acessar o sistema.</p>
+                <p>Toque em entrar para acessar o sistema.</p>
               </div>
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
                 Entrar
               </Button>
-              <div className="pt-2 text-center">
-                <Link to="/precadastro" className="text-xs text-muted-foreground hover:text-primary">
-                  Sou hóspede — quero fazer o pré-cadastro
-                </Link>
-              </div>
             </form>
           </CardContent>
         </Card>

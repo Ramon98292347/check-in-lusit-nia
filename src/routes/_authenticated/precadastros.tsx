@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatDate, formatCPF, formatPhone } from "@/utils/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { Copy, ExternalLink, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/precadastros")({
   component: PreCadastros,
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/precadastros")({
 function PreCadastros() {
   const [rows, setRows] = useState<any[]>([]);
   const [publicUrl, setPublicUrl] = useState("/precadastro");
+  const [copied, setCopied] = useState(false);
   const [acomodacoes, setAcomodacoes] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -57,11 +59,20 @@ function PreCadastros() {
   };
 
   useEffect(() => {
-    setPublicUrl(`${window.location.origin}/precadastro`);
+    if (typeof window !== "undefined") {
+      setPublicUrl(`${window.location.origin}/precadastro`);
+    }
+
     supabase.from("acomodacoes").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
       setAcomodacoes(data || []);
     });
   }, []);
+
+  const copiarLink = async () => {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
 
   useEffect(() => {
     carregar();
@@ -206,10 +217,12 @@ function PreCadastros() {
         <p className="text-muted-foreground text-sm">Fichas recebidas pelo formulário público</p>
       </div>
       <Card className="border-border/60 shadow-soft">
-        <CardHeader><CardTitle className="font-serif text-xl">Atalho de ficha</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-serif text-xl">Cadastro público</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Se o hóspede estiver na recepção, o operador pode copiar o link ou abrir o formulário na hora.
+            Use este link para abrir o formulário do hóspede na recepção ou compartilhar com antecedência.
           </p>
           <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-sm break-all">
             {publicUrl}
@@ -218,14 +231,35 @@ function PreCadastros() {
             <Button
               type="button"
               variant="outline"
+              onClick={copiarLink}
+              className={copied ? "border-primary bg-primary/10 text-primary shadow-sm" : ""}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {copied ? "Copiado!" : "Copiar link"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={async () => {
-                await navigator.clipboard.writeText(publicUrl);
+                if (navigator.share) {
+                  await navigator.share({
+                    title: "Pré-cadastro Pousada Lusitânia",
+                    text: "Abra o formulário público de pré-cadastro.",
+                    url: publicUrl,
+                  });
+                  return;
+                }
+                await copiarLink();
               }}
             >
-              Copiar link
+              <Share2 className="mr-2 h-4 w-4" />
+              Compartilhar
             </Button>
             <Button asChild>
-              <a href={publicUrl} target="_blank" rel="noreferrer">Abrir formulário</a>
+              <a href={publicUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Abrir formulário
+              </a>
             </Button>
           </div>
         </CardContent>

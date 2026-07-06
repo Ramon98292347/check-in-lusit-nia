@@ -4,28 +4,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/formatters";
-import { ClipboardList, LogIn, ExternalLink } from "lucide-react";
+import { ClipboardList, Copy, ExternalLink, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   component: Painel,
 });
 
 function Painel() {
-  const [stats, setStats] = useState({ pre: 0, confirmados: 0 });
+  const [stats, setStats] = useState({ pre: 0 });
   const [proximosCadastros, setProximosCadastros] = useState<any[]>([]);
+  const [publicUrl, setPublicUrl] = useState("/precadastro");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const hoje = new Date().toISOString().slice(0, 10);
     const inicioHoje = `${hoje}T00:00:00`;
 
     (async () => {
-      const [pre, confirmados] = await Promise.all([
+      const [pre] = await Promise.all([
         supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro"),
-        supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro").eq("checkin", hoje),
       ]);
       setStats({
         pre: pre.count || 0,
-        confirmados: confirmados.count || 0,
       });
 
       const { data: proximos } = await supabase
@@ -37,11 +37,33 @@ function Painel() {
         .limit(5);
       setProximosCadastros(proximos || []);
     })();
+
+    if (typeof window !== "undefined") {
+      setPublicUrl(`${window.location.origin}/precadastro`);
+    }
   }, []);
 
+  const copiarLink = async () => {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const compartilharLink = async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Pré-cadastro Pousada Lusitânia",
+        text: "Abra o formulário público de pré-cadastro.",
+        url: publicUrl,
+      });
+      return;
+    }
+
+    await copiarLink();
+  };
+
   const cards = [
-    { label: "Pré-cadastros pendentes", value: stats.pre, icon: ClipboardList, color: "text-amber-600" },
-    { label: "Entradas para hoje", value: stats.confirmados, icon: LogIn, color: "text-primary" },
+    { label: "Novo cadastro", value: stats.pre, icon: ClipboardList, color: "text-amber-600" },
   ];
 
   return (
@@ -50,21 +72,35 @@ function Painel() {
         <h1 className="font-serif text-3xl">Painel</h1>
         <p className="text-muted-foreground text-sm">Visão geral de hoje na pousada</p>
       </div>
-
-      <div className="grid gap-3 md:grid-cols-1 lg:max-w-xl">
-        <Card className="border-border/60 shadow-soft">
-          <CardContent className="flex justify-end pt-6">
-            <Button asChild>
+      <Card className="border-border/60 shadow-soft md:hidden">
+        <CardContent className="space-y-3 pt-6">
+          <div className="text-sm text-muted-foreground">
+            Acessos rápidos para o cadastro público.
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            <Button asChild className="w-full justify-center">
               <Link to="/precadastro">
                 <ExternalLink className="h-4 w-4" />
                 Criar cadastro
               </Link>
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid max-w-xl grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className={`w-full justify-center transition ${copied ? "border-primary bg-primary/10 text-primary shadow-sm" : ""}`}
+              onClick={copiarLink}
+            >
+              <Copy className="h-4 w-4" />
+              {copied ? "Copiado!" : "Copiar link"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full justify-center" onClick={compartilharLink}>
+              <Share2 className="h-4 w-4" />
+              Compartilhar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid max-w-xl grid-cols-1 gap-3">
         {cards.map((c) => (
           <Card key={c.label} className="shadow-soft">
             <CardContent className="pt-6">

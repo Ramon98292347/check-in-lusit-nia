@@ -1,8 +1,12 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   ClipboardList,
   LogOut,
+  ExternalLink,
+  Copy,
+  Share2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -147,12 +151,39 @@ export function DesktopHeaderNav() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { signOut, user, role } = useAuth();
   const navigate = useNavigate();
+  const [publicUrl, setPublicUrl] = useState("/precadastro");
+  const [copied, setCopied] = useState(false);
   const userInitials = user?.nome
     ?.split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("") || "CL";
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPublicUrl(`${window.location.origin}/precadastro`);
+    }
+  }, []);
+
+  const copiarLink = async () => {
+    await navigator.clipboard.writeText(publicUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const compartilharLink = async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: "Pré-cadastro Pousada Lusitânia",
+        text: "Abra o formulário público de pré-cadastro.",
+        url: publicUrl,
+      });
+      return;
+    }
+
+    await copiarLink();
+  };
 
   return (
     <div className="hidden items-center gap-3 md:flex">
@@ -175,6 +206,30 @@ export function DesktopHeaderNav() {
           );
         })}
       </nav>
+
+      <Button asChild className="rounded-full">
+        <Link to="/precadastro">
+          <ExternalLink className="h-4 w-4" />
+          Criar cadastro
+        </Link>
+      </Button>
+
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={copiarLink}
+          className={copied ? "border-primary bg-primary/10 text-primary shadow-sm" : ""}
+        >
+          <Copy className="h-4 w-4" />
+          {copied ? "Copiado!" : "Copiar link"}
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={compartilharLink}>
+          <Share2 className="h-4 w-4" />
+          Compartilhar
+        </Button>
+      </div>
 
       <div className="flex items-center gap-3 rounded-full border border-border/70 bg-background/80 px-3 py-2">
         <Avatar className="h-9 w-9 border border-border/70 bg-primary/5">
