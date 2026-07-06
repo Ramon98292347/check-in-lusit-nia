@@ -244,7 +244,7 @@ function DetalhesPrecCadastro() {
           className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
             statusImpressao === "IMPRESSO"
               ? "bg-emerald-100 text-emerald-700"
-              : "bg-amber-100 text-amber-700"
+              : "bg-orange-100 text-orange-700"
           }`}
         >
           {statusImpressao === "IMPRESSO" ? "Impresso" : "Pendente de impressão"}

@@ -363,7 +363,7 @@ function PreCadastros() {
                   className={
                     (r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
                       ? "bg-emerald-50/70 hover:bg-emerald-50"
-                      : undefined
+                      : "bg-orange-50/70 hover:bg-orange-50"
                   }
                 >
                   <TableCell className="font-medium">{r.hospede?.nome || "—"}</TableCell>
@@ -380,7 +380,7 @@ function PreCadastros() {
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
                           (r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
                             ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
+                            : "bg-orange-100 text-orange-700"
                         }`}
                       >
                         {(r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"

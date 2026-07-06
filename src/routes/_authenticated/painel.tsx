@@ -92,10 +92,38 @@ function Painel() {
   };
 
   const cards = [
-    { label: "Cadastros hoje", value: stats.hoje, icon: ClipboardList, color: "text-amber-600" },
-    { label: "Total de cadastros", value: stats.total, icon: ClipboardList, color: "text-sky-600" },
-    { label: "Pendentes de impressão", value: stats.pendentes, icon: ClipboardList, color: "text-orange-600" },
-    { label: "Impressos hoje", value: stats.impressosHoje, icon: ClipboardList, color: "text-emerald-600" },
+    {
+      label: "Cadastros hoje",
+      value: stats.hoje,
+      icon: ClipboardList,
+      color: "text-amber-600",
+      status: "Hoje",
+      statusClass: "bg-slate-100 text-slate-700",
+    },
+    {
+      label: "Total de cadastros",
+      value: stats.total,
+      icon: ClipboardList,
+      color: "text-sky-600",
+      status: "Geral",
+      statusClass: "bg-sky-100 text-sky-700",
+    },
+    {
+      label: "Pendentes de impressão",
+      value: stats.pendentes,
+      icon: ClipboardList,
+      color: "text-orange-600",
+      status: "Pendente",
+      statusClass: "bg-orange-100 text-orange-700",
+    },
+    {
+      label: "Impressos hoje",
+      value: stats.impressosHoje,
+      icon: ClipboardList,
+      color: "text-emerald-600",
+      status: "Impresso",
+      statusClass: "bg-emerald-100 text-emerald-700",
+    },
   ];
 
   return (
@@ -136,10 +164,13 @@ function Painel() {
         {cards.map((c) => (
           <Card key={c.label} className="shadow-soft">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs text-muted-foreground">{c.label}</div>
                   <div className="text-3xl font-serif mt-1">{c.value}</div>
+                  <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${c.statusClass}`}>
+                    {c.status}
+                  </span>
                 </div>
                 <c.icon className={`h-8 w-8 ${c.color} opacity-80`} />
               </div>
@@ -169,13 +200,24 @@ function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
             className={`block rounded-lg border p-3 transition ${
               (h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
                 ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
-                : "bg-card hover:bg-muted/40"
+                : "border-orange-200 bg-orange-50 hover:bg-orange-100"
             }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-medium truncate">{h.hospede?.nome || "—"}</div>
                 <div className="text-xs text-muted-foreground truncate">{h.acomodacao_texto || h.acomodacao?.nome || "—"} · {formatDate(h.checkin)} → {formatDate(h.checkout)}</div>
+                <div
+                  className={`text-xs font-medium ${
+                    (h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                      ? "text-emerald-700"
+                      : "text-orange-700"
+                  }`}
+                >
+                  Status: {(h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                    ? "Impresso"
+                    : "Pendente de impressão"}
+                </div>
                 <div className="text-xs text-muted-foreground">Recebido hoje</div>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -183,7 +225,7 @@ function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
                     (h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-primary/10 text-primary"
+                      : "bg-orange-100 text-orange-700"
                   }`}
                 >
                   {(h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO" ? "Impresso" : "Abrir ficha"}
