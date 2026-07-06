@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, CheckCircle2 } from "lucide-react";
@@ -25,20 +24,20 @@ export const Route = createFileRoute("/precadastro")({
 });
 
 const schema = z.object({
-  acomodacao_id: z.string().optional().or(z.literal("")),
+  acomodacao_texto: z.string().trim().min(2, "Acomodação obrigatória").max(120),
   checkin: z.string().min(1, "Data de check-in obrigatória"),
   checkout: z.string().min(1, "Data de check-out obrigatória"),
   adultos: z.number().min(1, "Mínimo 1 adulto"),
   criancas: z.number().min(0),
   nome: z.string().trim().min(2, "Nome obrigatório").max(120),
-  cpf: z.string().trim().min(11, "CPF obrigatório").max(20),
+  cpf: z.string().trim().min(11, "CPF obrigatório").max(14),
   nascimento: z.string().optional(),
   telefone: z.string().trim().min(8, "Telefone obrigatório").max(20),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  cep: z.string().trim().min(8, "CEP obrigatório").max(9),
   endereco: z.string().max(200).optional(),
   cidade: z.string().max(100).optional(),
   uf: z.string().max(2).optional(),
-  cep: z.string().max(15).optional(),
   placa_veiculo: z.string().max(15).optional(),
   observacoes: z.string().max(500).optional(),
   aceite: z.literal(true, { errorMap: () => ({ message: "Aceite obrigatório" }) }),
@@ -68,25 +67,58 @@ type EnvioInfo =
     };
 
 function PreCadastroPublico() {
-  const [acomodacoes, setAcomodacoes] = useState<any[]>([]);
   const [enviado, setEnviado] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [offlinePendentes, setOfflinePendentes] = useState(0);
   const [envioInfo, setEnvioInfo] = useState<EnvioInfo | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { acomodacao_id: "", adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
+    defaultValues: { acomodacao_texto: "", adultos: 1, criancas: 0, acompanhantes: [], aceite: false as any },
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "acompanhantes" });
 
   useEffect(() => {
-    supabase.from("acomodacoes").select("id, nome, valor_diaria").eq("ativo", true).order("nome")
-      .then(({ data }) => setAcomodacoes(data || []));
     setOfflinePendentes(getOfflinePrecCadastroCount());
   }, []);
+
+  const formatCpfInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})?/, (_, a, b, c, d) =>
+      `${a}.${b}.${c}${d ? `-${d}` : ""}`,
+    );
+  };
+
+  const formatCepInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    return digits.replace(/(\d{5})(\d{1,3})?/, (_, a, b) => `${a}${b ? `-${b}` : ""}`);
+  };
+
+  const handleNomeChange = (value: string) => value.toUpperCase();
+
+  const fetchCep = async (cepValue: string) => {
+    const digits = cepValue.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    setCepLoading(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      if (!response.ok) throw new Error("Não foi possível buscar o CEP");
+      const data = await response.json();
+      if (data.erro) throw new Error("CEP não encontrado");
+
+      setValue("endereco", data.logradouro || "");
+      setValue("cidade", data.localidade || "");
+      setValue("uf", (data.uf || "").toUpperCase());
+    } catch (error: any) {
+      toast.error(error.message || "CEP inválido ou não encontrado");
+    } finally {
+      setCepLoading(false);
+    }
+  };
 
   const onSubmit = async (values: Form) => {
     setLoading(true);
@@ -109,16 +141,13 @@ function PreCadastroPublico() {
           payload,
         });
       } else {
-        const acom = values.acomodacao_id
-          ? acomodacoes.find((a) => a.id === values.acomodacao_id) || null
-          : null;
-        const result = await submitPrecCadastroOnline(payload, acom);
+        const result = await submitPrecCadastroOnline(payload);
         setEnvioInfo({
           tipo: "online",
           hospedagemId: result.hospedagemId,
           hospedeId: result.hospedeId,
           payload,
-          acomodacaoNome: result.acomodacao?.nome || "",
+          acomodacaoNome: result.acomodacao_texto,
           qtd: result.qtd,
           valorDiaria: Number(result.valor_diaria || 0),
         });
@@ -162,8 +191,8 @@ function PreCadastroPublico() {
             hospedagem: {
               id: envioInfo.hospedagemId,
               hospede_id: envioInfo.hospedeId,
-              acomodacao_id: envioInfo.payload.acomodacao_id,
-              acomodacao_nome: envioInfo.acomodacaoNome,
+              acomodacao_id: null,
+              acomodacao_nome: envioInfo.payload.acomodacao_texto || envioInfo.acomodacaoNome,
               checkin: envioInfo.payload.checkin,
               checkout: envioInfo.payload.checkout,
               adultos: envioInfo.payload.adultos,
@@ -261,20 +290,9 @@ function PreCadastroPublico() {
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
-              <Label>Acomodação</Label>
-              <Select
-                value={watch("acomodacao_id") || "__none__"}
-                onValueChange={(v) => setValue("acomodacao_id", v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione a acomodação" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Não informar agora</SelectItem>
-                  {acomodacoes.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.acomodacao_id && <p className="text-xs text-destructive">{errors.acomodacao_id.message}</p>}
+              <Label>Acomodação *</Label>
+              <Input {...register("acomodacao_texto")} placeholder="Digite a acomodação desejada" />
+              {errors.acomodacao_texto && <p className="text-xs text-destructive">{errors.acomodacao_texto.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>Check-in *</Label>
@@ -300,12 +318,30 @@ function PreCadastroPublico() {
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
               <Label>Nome completo *</Label>
-              <Input {...register("nome")} />
+              <Input
+                {...register("nome", {
+                  onChange: (e) => {
+                    const value = handleNomeChange((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = value;
+                    setValue("nome", value);
+                  },
+                })}
+              />
               {errors.nome && <p className="text-xs text-destructive">{errors.nome.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>CPF *</Label>
-              <Input {...register("cpf")} placeholder="000.000.000-00" />
+              <Input
+                maxLength={14}
+                {...register("cpf", {
+                  onChange: (e) => {
+                    const value = formatCpfInput((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = value;
+                    setValue("cpf", value);
+                  },
+                })}
+                placeholder="000.000.000-00"
+              />
               {errors.cpf && <p className="text-xs text-destructive">{errors.cpf.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -321,23 +357,33 @@ function PreCadastroPublico() {
               <Label>E-mail</Label>
               <Input type="email" {...register("email")} />
             </div>
-            <div className="md:col-span-2 space-y-1.5">
-              <Label>Endereço</Label>
-              <Input {...register("endereco")} />
+            <div className="space-y-1.5">
+              <Label>CEP *</Label>
+              <Input
+                maxLength={9}
+                {...register("cep", {
+                  onChange: (e) => {
+                    const value = formatCepInput((e.target as HTMLInputElement).value);
+                    (e.target as HTMLInputElement).value = value;
+                    setValue("cep", value);
+                  },
+                  onBlur: (e) => fetchCep((e.target as HTMLInputElement).value),
+                })}
+                placeholder="00000-000"
+              />
+              {errors.cep && <p className="text-xs text-destructive">{errors.cep.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>UF</Label>
+              <Input maxLength={2} {...register("uf")} />
             </div>
             <div className="space-y-1.5">
               <Label>Cidade</Label>
               <Input {...register("cidade")} />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
-                <Label>UF</Label>
-                <Input maxLength={2} {...register("uf")} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>CEP</Label>
-                <Input {...register("cep")} />
-              </div>
+            <div className="md:col-span-2 space-y-1.5">
+              <Label>Endereço</Label>
+              <Input {...register("endereco")} />
             </div>
             <div className="space-y-1.5">
               <Label>Placa do veículo</Label>
