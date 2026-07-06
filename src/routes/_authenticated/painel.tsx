@@ -167,7 +167,7 @@ function Painel() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-xs text-muted-foreground">{c.label}</div>
-                  <div className="text-3xl font-serif mt-1">{c.value}</div>
+                  <div className="mt-1 text-3xl font-sans">{c.value}</div>
                   <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${c.statusClass}`}>
                     {c.status}
                   </span>
