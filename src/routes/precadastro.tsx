@@ -312,23 +312,6 @@ function PreCadastroPublico() {
         <Card className="shadow-elegant">
           <CardHeader><CardTitle className="font-serif">Sua estadia</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
-            <div className="md:col-span-2 space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <Label className="text-base font-semibold">CEP *</Label>
-                {cepLoading && <p className="text-xs text-muted-foreground">Buscando endereço...</p>}
-              </div>
-              <Input
-                maxLength={9}
-                inputMode="numeric"
-                placeholder="00000-000"
-                className="border-primary/30 bg-background"
-                {...register("cep", {
-                  onChange: (e) => setValue("cep", formatCEPInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
-                })}
-              />
-              {errors.cep && <p className="text-xs text-destructive">{errors.cep.message}</p>}
-              <p className="text-xs text-muted-foreground">Preencha primeiro para ajudar a completar o endereço automaticamente.</p>
-            </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Acomodação</Label>
               <Input
@@ -391,6 +374,23 @@ function PreCadastroPublico() {
             <div className="space-y-1.5">
               <Label>E-mail</Label>
               <Input type="email" {...register("email")} />
+            </div>
+            <div className="md:col-span-2 space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-base font-semibold">CEP *</Label>
+                {cepLoading && <p className="text-xs text-muted-foreground">Buscando endereço...</p>}
+              </div>
+              <Input
+                maxLength={9}
+                inputMode="numeric"
+                placeholder="00000-000"
+                className="border-primary/30 bg-background"
+                {...register("cep", {
+                  onChange: (e) => setValue("cep", formatCEPInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
+                })}
+              />
+              {errors.cep && <p className="text-xs text-destructive">{errors.cep.message}</p>}
+              <p className="text-xs text-muted-foreground">Preencha primeiro para ajudar a completar o endereço automaticamente.</p>
             </div>
             <div className="md:col-span-2 space-y-1.5">
               <Label>Endereço</Label>
