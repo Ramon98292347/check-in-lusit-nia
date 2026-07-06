@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatDate, formatCPF, formatPhone } from "@/utils/formatters";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Share2 } from "lucide-react";
 import { usePreCadastroAutoRefresh } from "@/hooks/usePreCadastroAutoRefresh";
 
 export const Route = createFileRoute("/_authenticated/precadastros")({
@@ -48,6 +48,12 @@ function PreCadastros() {
   });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const isDetalhe = /^\/precadastros\/[^/]+$/.test(pathname);
+
+  const sinalizarAtualizacao = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("precadastro-updated"));
+    }
+  }, []);
 
   const carregar = useCallback(async () => {
     const { data: hospedagens, error } = await supabase
@@ -192,6 +198,7 @@ function PreCadastros() {
       setEditOpen(false);
       setEditandoId(null);
       await carregar();
+      sinalizarAtualizacao();
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível salvar a ficha.");
     } finally {
@@ -231,8 +238,42 @@ function PreCadastros() {
       toast.success("Ficha excluída com sucesso.");
       setExcluindoId(null);
       await carregar();
+      sinalizarAtualizacao();
     } catch (error: any) {
       toast.error(error?.message || "Não foi possível excluir a ficha.");
+    }
+  };
+
+  const alternarStatusImpressao = async (id: string, statusAtual?: string | null) => {
+    const novoStatus = (statusAtual || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+      ? "PENDENTE_IMPRESSAO"
+      : "IMPRESSO";
+
+    try {
+      const payload =
+        novoStatus === "IMPRESSO"
+          ? { status_impressao: novoStatus, impresso_em: new Date().toISOString() }
+          : { status_impressao: novoStatus, impresso_em: null };
+
+      const { error } = await supabase.from("hospedagens").update(payload).eq("id", id);
+      if (error) throw error;
+
+      setRows((atual) =>
+        atual.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                ...payload,
+              }
+            : item,
+        ),
+      );
+      sinalizarAtualizacao();
+      toast.success(
+        novoStatus === "IMPRESSO" ? "Cadastro marcado como impresso." : "Cadastro marcado como pendente.",
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível alterar o status.");
     }
   };
 
@@ -317,7 +358,14 @@ function PreCadastros() {
             </TableHeader>
             <TableBody>
               {rows.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow
+                  key={r.id}
+                  className={
+                    (r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                      ? "bg-emerald-50/70 hover:bg-emerald-50"
+                      : undefined
+                  }
+                >
                   <TableCell className="font-medium">{r.hospede?.nome || "—"}</TableCell>
                   <TableCell>{formatCPF(r.hospede?.cpf)}</TableCell>
                   <TableCell>{formatPhone(r.hospede?.telefone)}</TableCell>
@@ -348,6 +396,16 @@ function PreCadastros() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => alternarStatusImpressao(r.id, r.status_impressao)}
+                      >
+                        <Check className="mr-1 h-4 w-4" />
+                        {(r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                          ? "Marcar pendente"
+                          : "Marcar impresso"}
+                      </Button>
                       <Button asChild size="sm" variant="outline">
                         <Link to="/precadastros/$id" params={{ id: r.id }}>Detalhes</Link>
                       </Button>

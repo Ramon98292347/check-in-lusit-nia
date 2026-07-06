@@ -54,7 +54,7 @@ function Painel() {
 
     const { data: proximos } = await supabase
       .from("hospedagens")
-      .select("id, checkin, checkout, criado_em, hospede:hospedes(nome), acomodacao:acomodacoes(nome), acomodacao_texto")
+      .select("id, checkin, checkout, criado_em, status_impressao, impresso_em, hospede:hospedes(nome), acomodacao:acomodacoes(nome), acomodacao_texto")
       .eq("origem", "pre_cadastro")
       .gte("criado_em", inicioHoje)
       .order("criado_em", { ascending: false })
@@ -166,7 +166,11 @@ function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
             key={h.id}
             to="/precadastros/$id"
             params={{ id: h.id }}
-            className="block rounded-lg border bg-card p-3 transition hover:bg-muted/40"
+            className={`block rounded-lg border p-3 transition ${
+              (h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+                : "bg-card hover:bg-muted/40"
+            }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -174,9 +178,20 @@ function ListaRapida({ titulo, itens }: { titulo: string; itens: any[] }) {
                 <div className="text-xs text-muted-foreground truncate">{h.acomodacao_texto || h.acomodacao?.nome || "—"} · {formatDate(h.checkin)} → {formatDate(h.checkout)}</div>
                 <div className="text-xs text-muted-foreground">Recebido hoje</div>
               </div>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                Abrir ficha
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    (h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-primary/10 text-primary"
+                  }`}
+                >
+                  {(h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO" ? "Impresso" : "Abrir ficha"}
+                </span>
+                {(h.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO" && h.impresso_em && (
+                  <span className="text-[11px] text-emerald-700/80">Impresso em {formatDate(h.impresso_em)}</span>
+                )}
+              </div>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
               Toque para abrir os dados completos da ficha.

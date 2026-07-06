@@ -33,11 +33,14 @@ export function usePreCadastroAutoRefresh({ onRefresh, enabled = true, intervalM
       )
       .subscribe();
 
+    window.addEventListener("precadastro-updated", triggerRefresh);
+
     const intervalo = window.setInterval(triggerRefresh, intervalMs);
 
     return () => {
       ativo = false;
       window.clearInterval(intervalo);
+      window.removeEventListener("precadastro-updated", triggerRefresh);
       void supabase.removeChannel(channel);
     };
   }, [enabled, intervalMs]);

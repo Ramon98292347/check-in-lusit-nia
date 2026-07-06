@@ -3,18 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { formatCPF, formatDate, formatPhone } from "@/utils/formatters";
-import { ArrowLeft, Loader2, Printer } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Printer } from "lucide-react";
 import { printElement } from "@/utils/pdf";
 import { toast } from "sonner";
 
@@ -30,9 +20,15 @@ function DetalhesPrecCadastro() {
   const id = params.id || pathname.split("/").filter(Boolean).at(-1) || "";
   const [registro, setRegistro] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmarImpressoOpen, setConfirmarImpressoOpen] = useState(false);
-  const [marcandoImpresso, setMarcandoImpresso] = useState(false);
+  const [imprimindo, setImprimindo] = useState(false);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const printableRef = useRef<HTMLDivElement | null>(null);
+
+  const sinalizarAtualizacao = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("precadastro-updated"));
+    }
+  }, []);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -74,40 +70,45 @@ function DetalhesPrecCadastro() {
     setLoading(false);
   }, [id]);
 
-  const confirmarImpressao = useCallback(
-    async (foiImpresso: boolean) => {
-      if (!foiImpresso || !registro) {
-        setConfirmarImpressoOpen(false);
-        return;
-      }
-
-      setMarcandoImpresso(true);
-      try {
-        const { error } = await supabase
-          .from("hospedagens")
-          .update({
-            status_impressao: "IMPRESSO",
-            impresso_em: new Date().toISOString(),
-          })
-          .eq("id", registro.id);
-
-        if (error) throw error;
-
-        await carregar();
-        setConfirmarImpressoOpen(false);
-      } catch (error: any) {
-        setConfirmarImpressoOpen(false);
-        toast.error(error?.message || "Não foi possível marcar como impresso.");
-      } finally {
-        setMarcandoImpresso(false);
-      }
-    },
-    [carregar, registro],
-  );
-
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  const atualizarStatusImpressao = useCallback(async () => {
+    if (!registro) return;
+
+    const novoStatus = (registro.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+      ? "PENDENTE_IMPRESSAO"
+      : "IMPRESSO";
+
+    setAlterandoStatus(true);
+    try {
+      const payload =
+        novoStatus === "IMPRESSO"
+          ? { status_impressao: novoStatus, impresso_em: new Date().toISOString() }
+          : { status_impressao: novoStatus, impresso_em: null };
+
+      const { error } = await supabase.from("hospedagens").update(payload).eq("id", registro.id);
+      if (error) throw error;
+
+      setRegistro((atual: any) =>
+        atual
+          ? {
+              ...atual,
+              ...payload,
+            }
+          : atual,
+      );
+      sinalizarAtualizacao();
+      toast.success(
+        novoStatus === "IMPRESSO" ? "Status marcado como impresso." : "Status marcado como pendente.",
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível alterar o status.");
+    } finally {
+      setAlterandoStatus(false);
+    }
+  }, [registro, sinalizarAtualizacao]);
 
   if (loading) {
     return (
@@ -185,17 +186,74 @@ function DetalhesPrecCadastro() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button
             variant="outline"
-            onClick={() => {
+            disabled={alterandoStatus}
+            onClick={atualizarStatusImpressao}
+          >
+            <Check className="mr-1 h-4 w-4" />
+            {alterandoStatus
+              ? "Alterando..."
+              : statusImpressao === "IMPRESSO"
+                ? "Marcar como pendente"
+                : "Marcar como impresso"}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={imprimindo}
+            onClick={async () => {
               if (!printableRef.current) return;
-              printElement(printableRef.current, `Pre-cadastro - ${registro.hospede?.nome || registro.id}`, {
-                onAfterPrint: () => setConfirmarImpressoOpen(true),
-              });
+              setImprimindo(true);
+              try {
+                if ((registro.status_impressao || "PENDENTE_IMPRESSAO") !== "IMPRESSO") {
+                  const { error } = await supabase
+                    .from("hospedagens")
+                    .update({
+                      status_impressao: "IMPRESSO",
+                      impresso_em: new Date().toISOString(),
+                    })
+                    .eq("id", registro.id);
+
+                  if (error) throw error;
+
+                  setRegistro((atual: any) =>
+                    atual
+                      ? {
+                          ...atual,
+                          status_impressao: "IMPRESSO",
+                          impresso_em: new Date().toISOString(),
+                        }
+                      : atual,
+                  );
+                  sinalizarAtualizacao();
+                }
+
+                printElement(printableRef.current, `Pre-cadastro - ${registro.hospede?.nome || registro.id}`);
+              } finally {
+                setImprimindo(false);
+              }
             }}
           >
             <Printer className="mr-1 h-4 w-4" />
-            {statusImpressao === "IMPRESSO" ? "Reimprimir" : "Imprimir"}
+            {imprimindo ? "Imprimindo..." : statusImpressao === "IMPRESSO" ? "Reimprimir" : "Imprimir"}
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-muted-foreground">Status da impressão:</span>
+        <span
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+            statusImpressao === "IMPRESSO"
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-amber-100 text-amber-700"
+          }`}
+        >
+          {statusImpressao === "IMPRESSO" ? "Impresso" : "Pendente de impressão"}
+        </span>
+        {statusImpressao === "IMPRESSO" && registro.impresso_em && (
+          <span className="text-muted-foreground">
+            Impresso em {formatDate(registro.impresso_em)}
+          </span>
+        )}
       </div>
 
       <div className="w-full overflow-x-auto pb-4">
@@ -205,25 +263,6 @@ function DetalhesPrecCadastro() {
           dangerouslySetInnerHTML={{ __html: fichaHtml }}
         />
       </div>
-
-      <AlertDialog open={confirmarImpressoOpen} onOpenChange={setConfirmarImpressoOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Este documento foi impresso?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se a impressão saiu corretamente, vamos marcar esta ficha como impressa.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => confirmarImpressao(false)}>
-              Não, manter pendente
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmarImpressao(true)} disabled={marcandoImpresso}>
-              {marcandoImpresso ? "Marcando..." : "Sim, marcar como impresso"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
