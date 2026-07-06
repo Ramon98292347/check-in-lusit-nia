@@ -1,39 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
-
-async function registrarDocumentoGerado(payload: {
-  hospedagem_id: string;
-  tipo_documento: string;
-  canal: string;
-  status: string;
-  payload: any;
-  resposta_webhook: any;
-}) {
-  const { error } = await supabase.from("documentos_gerados").insert({
-    ...payload,
-    enviado_em: new Date().toISOString(),
-  });
-
-  if (error) {
-    console.warn("Nao foi possivel registrar em documentos_gerados:", error.message);
-  }
-}
-
-async function buscarWebhookUrl(chaves: string[]) {
-  const unicas = [...new Set(chaves.filter(Boolean))];
-
-  for (const chave of unicas) {
-    const { data: cfg } = await supabase
-      .from("configuracoes_sistema")
-      .select("valor")
-      .eq("chave", chave)
-      .maybeSingle();
-
-    const url = cfg?.valor?.trim();
-    if (url) return { url, chave };
-  }
-
-  return { url: "", chave: unicas[0] ?? "" };
-}
+const WEBHOOKS_ATIVOS = false;
 
 export async function enviarWebhook(opts: {
   hospedagem_id: string;
@@ -43,54 +8,14 @@ export async function enviarWebhook(opts: {
   chaves_fallback?: string[];
   payload: any;
 }) {
-  const { url, chave } = await buscarWebhookUrl([opts.chave_webhook, ...(opts.chaves_fallback ?? [])]);
-  let status = "erro";
-  let resposta: any = null;
-
-  if (!url) {
-    await registrarDocumentoGerado({
+  if (!WEBHOOKS_ATIVOS) {
+    return {
+      status: "desativado",
       hospedagem_id: opts.hospedagem_id,
       tipo_documento: opts.tipo_documento,
       canal: opts.canal,
-      status: "sem_webhook",
-      payload: opts.payload,
-      resposta_webhook: { erro: "Webhook não configurado", chave_tentada: chave || opts.chave_webhook },
-    });
-    return;
+    };
   }
-
-  try {
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(opts.payload),
-    });
-    resposta = { status: r.status, ok: r.ok, chave_utilizada: chave };
-    status = r.ok ? "enviado" : "erro";
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  } catch (e: any) {
-    resposta = { erro: e.message, chave_utilizada: chave };
-    status = "erro";
-    await registrarDocumentoGerado({
-      hospedagem_id: opts.hospedagem_id,
-      tipo_documento: opts.tipo_documento,
-      canal: opts.canal,
-      status,
-      payload: opts.payload,
-      resposta_webhook: resposta,
-    });
-    console.warn("Falha ao enviar webhook:", e.message);
-    return;
-  }
-
-  await registrarDocumentoGerado({
-    hospedagem_id: opts.hospedagem_id,
-    tipo_documento: opts.tipo_documento,
-    canal: opts.canal,
-    status,
-    payload: opts.payload,
-    resposta_webhook: resposta,
-  });
 }
 
 export async function enviarEventoHospedagem(opts: {
