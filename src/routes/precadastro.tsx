@@ -20,6 +20,24 @@ import { enviarEventoHospedagem } from "@/services/webhooksService";
 const logoUrl = "/logo.png";
 const cadastroHeroUrl = "/fundo-cadstro.png";
 
+const onlyDigits = (value: string) => value.replace(/\D/g, "");
+
+const formatCPFInput = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+};
+
+const formatCEPInput = (value: string) => {
+  const digits = onlyDigits(value).slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+};
+
+const formatUppercase = (value: string) => value.toUpperCase();
+
 export const Route = createFileRoute("/precadastro")({
   component: PreCadastroPublico,
 });
@@ -74,6 +92,7 @@ function PreCadastroPublico() {
   const [cancelando, setCancelando] = useState(false);
   const [offlinePendentes, setOfflinePendentes] = useState(0);
   const [envioInfo, setEnvioInfo] = useState<EnvioInfo | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
 
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema) as any,
@@ -81,12 +100,52 @@ function PreCadastroPublico() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "acompanhantes" });
+  const cepValue = watch("cep") || "";
 
   useEffect(() => {
     supabase.from("acomodacoes").select("id, nome, valor_diaria").eq("ativo", true).order("nome")
       .then(({ data }) => setAcomodacoes(data || []));
     setOfflinePendentes(getOfflinePrecCadastroCount());
   }, []);
+
+  useEffect(() => {
+    const cepDigits = onlyDigits(cepValue).slice(0, 8);
+    if (cepDigits.length !== 8) return;
+
+    let cancelled = false;
+
+    const buscarEndereco = async () => {
+      setCepLoading(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+        const data = await response.json();
+
+        if (cancelled || !data || data.erro) return;
+
+        if (data.logradouro) {
+          setValue("endereco", data.logradouro, { shouldDirty: true, shouldValidate: true });
+        }
+        if (data.localidade) {
+          setValue("cidade", data.localidade, { shouldDirty: true, shouldValidate: true });
+        }
+        if (data.uf) {
+          setValue("uf", data.uf, { shouldDirty: true, shouldValidate: true });
+        }
+      } catch {
+        // Mantém o formulário disponível mesmo se o CEP falhar.
+      } finally {
+        if (!cancelled) {
+          setCepLoading(false);
+        }
+      }
+    };
+
+    void buscarEndereco();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cepValue, setValue]);
 
   const onSubmit = async (values: Form) => {
     setLoading(true);
@@ -300,12 +359,23 @@ function PreCadastroPublico() {
           <CardContent className="grid md:grid-cols-2 gap-4">
             <div className="md:col-span-2 space-y-1.5">
               <Label>Nome completo *</Label>
-              <Input {...register("nome")} />
+              <Input
+                {...register("nome", {
+                  onChange: (e) => setValue("nome", formatUppercase((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
+                })}
+              />
               {errors.nome && <p className="text-xs text-destructive">{errors.nome.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>CPF *</Label>
-              <Input {...register("cpf")} placeholder="000.000.000-00" />
+              <Input
+                maxLength={14}
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                {...register("cpf", {
+                  onChange: (e) => setValue("cpf", formatCPFInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
+                })}
+              />
               {errors.cpf && <p className="text-xs text-destructive">{errors.cpf.message}</p>}
             </div>
             <div className="space-y-1.5">
@@ -336,7 +406,15 @@ function PreCadastroPublico() {
               </div>
               <div className="space-y-1.5">
                 <Label>CEP</Label>
-                <Input {...register("cep")} />
+                <Input
+                  maxLength={9}
+                  inputMode="numeric"
+                  placeholder="00000-000"
+                  {...register("cep", {
+                    onChange: (e) => setValue("cep", formatCEPInput((e.target as HTMLInputElement).value), { shouldDirty: true, shouldValidate: true }),
+                  })}
+                />
+                {cepLoading && <p className="text-xs text-muted-foreground">Buscando endereço pelo CEP...</p>}
               </div>
             </div>
             <div className="space-y-1.5">
