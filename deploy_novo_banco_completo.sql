@@ -247,11 +247,13 @@ CREATE TABLE IF NOT EXISTS public.hospedagens (
   valor_pago NUMERIC(10,2) DEFAULT 0,
   saldo NUMERIC(10,2) DEFAULT 0,
   status TEXT DEFAULT 'pre_cadastro',
+  status_impressao TEXT DEFAULT 'PENDENTE_IMPRESSAO',
   observacoes TEXT,
   nf TEXT,
   origem TEXT DEFAULT 'pre_cadastro',
   criado_em TIMESTAMPTZ DEFAULT now(),
-  atualizado_em TIMESTAMPTZ DEFAULT now()
+  atualizado_em TIMESTAMPTZ DEFAULT now(),
+  impresso_em TIMESTAMPTZ
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.hospedagens TO authenticated;
 GRANT INSERT ON public.hospedagens TO anon;
@@ -264,9 +266,11 @@ CREATE POLICY "autenticados leem hospedagens" ON public.hospedagens FOR SELECT T
 DROP POLICY IF EXISTS "autenticados gerenciam hospedagens" ON public.hospedagens;
 CREATE POLICY "autenticados gerenciam hospedagens" ON public.hospedagens FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE INDEX IF NOT EXISTS idx_hospedagens_status ON public.hospedagens(status);
+CREATE INDEX IF NOT EXISTS idx_hospedagens_status_impressao ON public.hospedagens(status_impressao);
 CREATE INDEX IF NOT EXISTS idx_hospedagens_checkin ON public.hospedagens(checkin);
 CREATE INDEX IF NOT EXISTS idx_hospedagens_checkout ON public.hospedagens(checkout);
 CREATE INDEX IF NOT EXISTS idx_hospedagens_acomodacao ON public.hospedagens(acomodacao_id);
+CREATE INDEX IF NOT EXISTS idx_hospedagens_impresso_em ON public.hospedagens(impresso_em);
 DROP TRIGGER IF EXISTS trg_hospedagens_updated ON public.hospedagens;
 CREATE TRIGGER trg_hospedagens_updated BEFORE UPDATE ON public.hospedagens FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 

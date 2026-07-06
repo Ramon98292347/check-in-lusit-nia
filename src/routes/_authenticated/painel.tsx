@@ -12,7 +12,12 @@ export const Route = createFileRoute("/_authenticated/painel")({
 });
 
 function Painel() {
-  const [stats, setStats] = useState({ pre: 0 });
+  const [stats, setStats] = useState({
+    hoje: 0,
+    total: 0,
+    pendentes: 0,
+    impressosHoje: 0,
+  });
   const [proximosCadastros, setProximosCadastros] = useState<any[]>([]);
   const [publicUrl, setPublicUrl] = useState("/precadastro");
   const [copied, setCopied] = useState(false);
@@ -21,11 +26,30 @@ function Painel() {
     const hoje = new Date().toISOString().slice(0, 10);
     const inicioHoje = `${hoje}T00:00:00`;
 
-    const [pre] = await Promise.all([
+    const [total, hojeCadastros, pendentes, impressosHoje] = await Promise.all([
       supabase.from("hospedagens").select("id", { count: "exact", head: true }).eq("origem", "pre_cadastro"),
+      supabase
+        .from("hospedagens")
+        .select("id", { count: "exact", head: true })
+        .eq("origem", "pre_cadastro")
+        .gte("criado_em", inicioHoje),
+      supabase
+        .from("hospedagens")
+        .select("id", { count: "exact", head: true })
+        .eq("origem", "pre_cadastro")
+        .eq("status_impressao", "PENDENTE_IMPRESSAO"),
+      supabase
+        .from("hospedagens")
+        .select("id", { count: "exact", head: true })
+        .eq("origem", "pre_cadastro")
+        .eq("status_impressao", "IMPRESSO")
+        .gte("impresso_em", inicioHoje),
     ]);
     setStats({
-      pre: pre.count || 0,
+      hoje: hojeCadastros.count || 0,
+      total: total.count || 0,
+      pendentes: pendentes.count || 0,
+      impressosHoje: impressosHoje.count || 0,
     });
 
     const { data: proximos } = await supabase
@@ -68,11 +92,14 @@ function Painel() {
   };
 
   const cards = [
-    { label: "Novo cadastro", value: stats.pre, icon: ClipboardList, color: "text-amber-600" },
+    { label: "Cadastros hoje", value: stats.hoje, icon: ClipboardList, color: "text-amber-600" },
+    { label: "Total de cadastros", value: stats.total, icon: ClipboardList, color: "text-sky-600" },
+    { label: "Pendentes de impressão", value: stats.pendentes, icon: ClipboardList, color: "text-orange-600" },
+    { label: "Impressos hoje", value: stats.impressosHoje, icon: ClipboardList, color: "text-emerald-600" },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       <div>
         <h1 className="font-serif text-3xl">Painel</h1>
         <p className="text-muted-foreground text-sm">Visão geral de hoje na pousada</p>
@@ -105,7 +132,7 @@ function Painel() {
           </div>
         </CardContent>
       </Card>
-      <div className="grid max-w-xl grid-cols-1 gap-3">
+      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
           <Card key={c.label} className="shadow-soft">
             <CardContent className="pt-6">
@@ -121,7 +148,7 @@ function Painel() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:max-w-3xl">
+      <div className="grid w-full gap-4">
         <ListaRapida titulo="Nova Ficha de Hóspede" itens={proximosCadastros} />
       </div>
     </div>

@@ -175,6 +175,7 @@ export type Database = {
           criado_em: string | null
           criancas: number | null
           desconto: number | null
+          impresso_em: string | null
           hospede_id: string | null
           id: string
           nf: string | null
@@ -182,6 +183,7 @@ export type Database = {
           origem: string | null
           qtd_diarias: number | null
           saldo: number | null
+          status_impressao: string | null
           status: string | null
           valor_consumo: number | null
           valor_danos: number | null
@@ -199,6 +201,7 @@ export type Database = {
           criado_em?: string | null
           criancas?: number | null
           desconto?: number | null
+          impresso_em?: string | null
           hospede_id?: string | null
           id?: string
           nf?: string | null
@@ -206,6 +209,7 @@ export type Database = {
           origem?: string | null
           qtd_diarias?: number | null
           saldo?: number | null
+          status_impressao?: string | null
           status?: string | null
           valor_consumo?: number | null
           valor_danos?: number | null
@@ -223,6 +227,7 @@ export type Database = {
           criado_em?: string | null
           criancas?: number | null
           desconto?: number | null
+          impresso_em?: string | null
           hospede_id?: string | null
           id?: string
           nf?: string | null
@@ -230,6 +235,7 @@ export type Database = {
           origem?: string | null
           qtd_diarias?: number | null
           saldo?: number | null
+          status_impressao?: string | null
           status?: string | null
           valor_consumo?: number | null
           valor_danos?: number | null

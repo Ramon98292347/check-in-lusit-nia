@@ -50,13 +50,40 @@ function PreCadastros() {
   const isDetalhe = /^\/precadastros\/[^/]+$/.test(pathname);
 
   const carregar = useCallback(async () => {
-    const { data } = await supabase
+    const { data: hospedagens, error } = await supabase
       .from("hospedagens")
-      .select("id, checkin, checkout, adultos, criancas, criado_em, hospede:hospedes(nome, cpf, telefone), acomodacao:acomodacoes(nome), acomodacao_texto")
+      .select("id, hospede_id, acomodacao_id, checkin, checkout, adultos, criancas, criado_em, status_impressao, impresso_em, acomodacao_texto")
       .eq("origem", "pre_cadastro")
       .order("criado_em", { ascending: false });
 
-    setRows(data || []);
+    if (error) {
+      toast.error(error.message || "Não foi possível carregar as fichas.");
+      setRows([]);
+      return;
+    }
+
+    const hospedeIds = [...new Set((hospedagens || []).map((item) => item.hospede_id).filter(Boolean))] as string[];
+    const acomodacaoIds = [...new Set((hospedagens || []).map((item) => item.acomodacao_id).filter(Boolean))] as string[];
+
+    const [{ data: hospedes }, { data: acomodacoes }] = await Promise.all([
+      hospedeIds.length
+        ? supabase.from("hospedes").select("id, nome, cpf, telefone").in("id", hospedeIds)
+        : Promise.resolve({ data: [] }),
+      acomodacaoIds.length
+        ? supabase.from("acomodacoes").select("id, nome").in("id", acomodacaoIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const hospedeMap = new Map((hospedes || []).map((item) => [item.id, item]));
+    const acomodacaoMap = new Map((acomodacoes || []).map((item) => [item.id, item]));
+
+    setRows(
+      (hospedagens || []).map((item) => ({
+        ...item,
+        hospede: item.hospede_id ? hospedeMap.get(item.hospede_id) || null : null,
+        acomodacao: item.acomodacao_id ? acomodacaoMap.get(item.acomodacao_id) || null : null,
+      })),
+    );
   }, []);
 
   useEffect(() => {
@@ -284,6 +311,7 @@ function PreCadastros() {
                 <TableHead>Check-out</TableHead>
                 <TableHead className="text-center">Ad.</TableHead>
                 <TableHead className="text-center">Cri.</TableHead>
+                <TableHead className="text-center">Impressão</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -298,6 +326,26 @@ function PreCadastros() {
                   <TableCell>{formatDate(r.checkout)}</TableCell>
                   <TableCell className="text-center">{r.adultos}</TableCell>
                   <TableCell className="text-center">{r.criancas}</TableCell>
+                  <TableCell className="text-center">
+                    <div className="space-y-1">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                          (r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {(r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO"
+                          ? "Impresso"
+                          : "Pendente de impressão"}
+                      </span>
+                      {(r.status_impressao || "PENDENTE_IMPRESSAO") === "IMPRESSO" && r.impresso_em && (
+                        <div className="text-[11px] text-muted-foreground">
+                          {formatDate(r.impresso_em)}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-wrap justify-end gap-2">
                       <Button asChild size="sm" variant="outline">
@@ -314,7 +362,7 @@ function PreCadastros() {
                 </TableRow>
               ))}
               {rows.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhuma ficha recebida</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhuma ficha recebida</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

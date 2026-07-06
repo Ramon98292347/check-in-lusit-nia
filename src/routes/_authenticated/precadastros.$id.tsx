@@ -1,11 +1,22 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams, useRouterState } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatCPF, formatDate, formatPhone } from "@/utils/formatters";
 import { ArrowLeft, Loader2, Printer } from "lucide-react";
 import { printElement } from "@/utils/pdf";
+import { toast } from "sonner";
 
 const logoUrl = "/logo-lusitania.png";
 
@@ -14,13 +25,23 @@ export const Route = createFileRoute("/_authenticated/precadastros/$id")({
 });
 
 function DetalhesPrecCadastro() {
-  const { id } = useParams({ from: "/_authenticated/precadastros/$id" });
+  const params = useParams({ from: "/_authenticated/precadastros/$id" });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const id = params.id || pathname.split("/").filter(Boolean).at(-1) || "";
   const [registro, setRegistro] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmarImpressoOpen, setConfirmarImpressoOpen] = useState(false);
+  const [marcandoImpresso, setMarcandoImpresso] = useState(false);
   const printableRef = useRef<HTMLDivElement | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
+
+    if (!id) {
+      setRegistro(null);
+      setLoading(false);
+      return;
+    }
 
     const { data: hospedagem } = await supabase
       .from("hospedagens")
@@ -53,8 +74,39 @@ function DetalhesPrecCadastro() {
     setLoading(false);
   }, [id]);
 
+  const confirmarImpressao = useCallback(
+    async (foiImpresso: boolean) => {
+      if (!foiImpresso || !registro) {
+        setConfirmarImpressoOpen(false);
+        return;
+      }
+
+      setMarcandoImpresso(true);
+      try {
+        const { error } = await supabase
+          .from("hospedagens")
+          .update({
+            status_impressao: "IMPRESSO",
+            impresso_em: new Date().toISOString(),
+          })
+          .eq("id", registro.id);
+
+        if (error) throw error;
+
+        await carregar();
+        setConfirmarImpressoOpen(false);
+      } catch (error: any) {
+        setConfirmarImpressoOpen(false);
+        toast.error(error?.message || "Não foi possível marcar como impresso.");
+      } finally {
+        setMarcandoImpresso(false);
+      }
+    },
+    [carregar, registro],
+  );
+
   useEffect(() => {
-    carregar();
+    void carregar();
   }, [carregar]);
 
   if (loading) {
@@ -90,6 +142,7 @@ function DetalhesPrecCadastro() {
     registro.valor_hospedagem ??
     (Number(registro.valor_diaria || 0) * Number(registro.qtd_diarias || 0)),
   );
+  const statusImpressao = registro.status_impressao || "PENDENTE_IMPRESSAO";
   const dataVazia = "__/___/_____";
   const fichaHtml = gerarFichaHtml({
     logoUrl,
@@ -132,10 +185,15 @@ function DetalhesPrecCadastro() {
         <div className="flex flex-wrap gap-2 sm:justify-end">
           <Button
             variant="outline"
-            onClick={() => printableRef.current && printElement(printableRef.current, `Pre-cadastro - ${registro.hospede?.nome || registro.id}`)}
+            onClick={() => {
+              if (!printableRef.current) return;
+              printElement(printableRef.current, `Pre-cadastro - ${registro.hospede?.nome || registro.id}`, {
+                onAfterPrint: () => setConfirmarImpressoOpen(true),
+              });
+            }}
           >
             <Printer className="mr-1 h-4 w-4" />
-            Imprimir
+            {statusImpressao === "IMPRESSO" ? "Reimprimir" : "Imprimir"}
           </Button>
         </div>
       </div>
@@ -147,6 +205,25 @@ function DetalhesPrecCadastro() {
           dangerouslySetInnerHTML={{ __html: fichaHtml }}
         />
       </div>
+
+      <AlertDialog open={confirmarImpressoOpen} onOpenChange={setConfirmarImpressoOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Este documento foi impresso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se a impressão saiu corretamente, vamos marcar esta ficha como impressa.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => confirmarImpressao(false)}>
+              Não, manter pendente
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmarImpressao(true)} disabled={marcandoImpresso}>
+              {marcandoImpresso ? "Marcando..." : "Sim, marcar como impresso"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

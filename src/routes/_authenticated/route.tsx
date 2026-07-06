@@ -47,7 +47,7 @@ function AuthenticatedLayout() {
       const { data } = await supabase
         .from("hospedagens")
         .select("id, criado_em, hospede:hospedes(nome)")
-        .eq("status", "pre_cadastro")
+        .eq("origem", "pre_cadastro")
         .order("criado_em", { ascending: false })
         .limit(1)
         .maybeSingle();

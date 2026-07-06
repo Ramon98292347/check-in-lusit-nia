@@ -132,13 +132,24 @@ export async function downloadElementAsPdf(element: HTMLElement, filename: strin
   }
 }
 
-export function printElement(element: HTMLElement, title: string) {
+export function printElement(
+  element: HTMLElement,
+  title: string,
+  options?: { onAfterPrint?: () => void },
+) {
   const printWindow = window.open("", "_blank", "width=1024,height=768");
   if (!printWindow) return;
 
   const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
     .map((node) => node.outerHTML)
     .join("\n");
+
+  const handleAfterPrint = () => {
+    options?.onAfterPrint?.();
+    printWindow.close();
+  };
+
+  printWindow.addEventListener("afterprint", handleAfterPrint, { once: true });
 
   printWindow.document.write(`
     <html>
