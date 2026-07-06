@@ -88,7 +88,7 @@ function AuthPage() {
               A tranquilidade das montanhas,<br />o conforto do lar.
             </h1>
             <p className="mt-4 text-white/85 max-w-md">
-              Sistema de gestão de hospedagens — pré-cadastro, check-in, vistoria e fechamento em poucos toques.
+              Sistema de gestão de hospedagens — pré-cadastro em poucos toques.
             </p>
           </div>
         </div>
