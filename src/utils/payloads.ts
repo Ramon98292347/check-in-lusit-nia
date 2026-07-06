@@ -133,79 +133,57 @@ function buildFichaHospedeHtml(payload: ReturnType<typeof payloadFichaHospedeBas
 }
 
 function buildControleConsumoHtml(payload: ReturnType<typeof payloadControleConsumoBase>) {
-  const itensRows = payload.itens.length > 0
-    ? payload.itens
-        .map(
-          (item) => `
-            <tr>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.acomodacao)}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.checkin)}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.checkout)}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(item.produto)}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; text-align:center; color:#16241d;">${filled(item.quantidade)}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; text-align:right; color:#16241d;">${safeText(formatCurrency(item.valor_total))}</td>
-              <td style="padding:10px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.observacoes)}</td>
-            </tr>
-          `,
-        )
-        .join("")
-    : `
-      <tr>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.acomodacao)}</td>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.checkin)}</td>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.checkout)}</td>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#6c7a72;" colspan="2">Sem itens lançados</td>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; text-align:right; color:#16241d;">${safeText(formatCurrency(payload.valor_total))}</td>
-        <td style="padding:18px 12px; border-bottom:1px solid #d7e0db; font-size:13px; color:#16241d;">${filled(payload.observacoes)}</td>
-      </tr>
-    `;
+  const blankRows = Array.from({ length: 12 })
+    .map(
+      () => `
+        <tr>
+          <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+          <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+          <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+          <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+          <td style="height:27px; border-bottom:1px solid #444;"></td>
+        </tr>
+      `,
+    )
+    .join("");
 
   return `
-    <div style="font-family:'Arial',sans-serif; background:#f7f5ef; padding:22px; color:#16241d;">
-      <div style="max-width:1040px; margin:0 auto; background:#fffdfa; border:1px solid #c4d1c7; border-radius:18px; overflow:hidden;">
-        <div style="padding:22px 24px; background:linear-gradient(180deg,#f6fbf8 0%,#edf5f0 100%); border-bottom:1px solid #d7e0db;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:18px;">
-            <div>
-              <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.14em; color:#6c7a72;">Resumo de hospedagem</div>
-              <h2 style="margin:8px 0 0; font-size:34px; font-family:'Georgia',serif; color:#16241d;">Controle de Consumo</h2>
-            </div>
-            <img src="${safeText(getPublicAssetUrl(SYSTEM_LOGO_PATH))}" alt="Pousada Lusitânia" style="height:54px; object-fit:contain;" />
-          </div>
-        </div>
-        <div style="padding:18px 20px 24px;">
-          <table style="width:100%; border-collapse:collapse; border:1px solid #d7e0db; border-radius:14px; overflow:hidden;">
+    <div style="font-family:'Arial',sans-serif; background:#ffffff; padding:22px; color:#111;">
+      <div style="max-width:1040px; margin:0 auto; background:#fff; border:1px solid #444; border-radius:10px; overflow:hidden;">
+        <div style="padding:0;">
+          <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
             <thead>
-              <tr style="background:#eef4f0;">
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:left; font-size:12px; letter-spacing:0.08em; color:#415249;">Acomodação</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:left; font-size:12px; letter-spacing:0.08em; color:#415249;">Check-in</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:left; font-size:12px; letter-spacing:0.08em; color:#415249;">Check-out</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:left; font-size:12px; letter-spacing:0.08em; color:#415249;">Item</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:center; font-size:12px; letter-spacing:0.08em; color:#415249;">Qtd.</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:right; font-size:12px; letter-spacing:0.08em; color:#415249;">Valor total</th>
-                <th style="padding:12px; border-bottom:1px solid #d7e0db; text-align:left; font-size:12px; letter-spacing:0.08em; color:#415249;">Observações</th>
+              <tr>
+                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">ACOMODAÇÃO</th>
+                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">CHECK-IN</th>
+                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">CHECK-OUT</th>
+                <th style="padding:8px 6px; border-right:1px solid #444; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">VALOR TOTAL R$</th>
+                <th style="padding:8px 6px; border-bottom:1px solid #444; text-align:center; font-size:24px; font-weight:700; color:#000;">OBSERVAÇÕES</th>
               </tr>
             </thead>
             <tbody>
-              ${itensRows}
+              ${blankRows}
+              <tr>
+                <td rowspan="3" style="padding:0 12px 12px; border-right:1px solid #444; border-bottom:1px solid #444; font-size:22px; font-weight:700; color:#000; vertical-align:bottom; text-align:left;">NF:</td>
+                <td style="border-right:1px solid #444;"></td>
+                <td style="border-right:1px solid #444;"></td>
+                <td style="border-right:1px solid #444;"></td>
+                <td style="border-bottom:1px solid #444;"></td>
+              </tr>
+              <tr>
+                <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+                <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+                <td style="height:27px; border-right:1px solid #444; border-bottom:1px solid #444;"></td>
+                <td style="height:27px; border-bottom:1px solid #444;"></td>
+              </tr>
+              <tr>
+                <td style="height:27px; border-right:1px solid #444;"></td>
+                <td style="height:27px; border-right:1px solid #444;"></td>
+                <td style="height:27px; border-right:1px solid #444;"></td>
+                <td style="height:27px;"></td>
+              </tr>
             </tbody>
           </table>
-
-          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:18px;">
-            ${summaryCardSoft("Hospedagem", formatCurrency(payload.valor_hospedagem))}
-            ${summaryCardSoft("Consumo", formatCurrency(payload.valor_consumo))}
-            ${summaryCardSoft("Danos / extras", formatCurrency(payload.valor_danos))}
-            ${summaryCardSoft("Valor total", formatCurrency(payload.valor_total))}
-          </div>
-
-          <div style="display:grid; grid-template-columns:1fr 180px; gap:18px; margin-top:18px; align-items:end;">
-            <div style="min-height:80px; padding:14px 16px; border:1px dashed #c4d1c7; border-radius:14px; color:#43554b; font-size:13px;">
-              NF: ${filled(payload.nf)}
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:12px; text-transform:uppercase; letter-spacing:0.12em; color:#6c7a72;">Saldo</div>
-              <div style="margin-top:6px; font-size:28px; font-weight:700; color:#16241d;">${safeText(formatCurrency(payload.saldo))}</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

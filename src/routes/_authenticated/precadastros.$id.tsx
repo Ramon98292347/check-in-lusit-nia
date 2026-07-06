@@ -300,14 +300,7 @@ function gerarFichaHtml(dados: {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="${tdControleStyle()} text-align:center;">${escapeHtml(dados.acomodacao)}</td>
-              <td style="${tdControleStyle()} text-align:center; letter-spacing:1px;">${escapeHtml(dados.checkin)}</td>
-              <td style="${tdControleStyle()} text-align:center; letter-spacing:1px;">${escapeHtml(dados.checkout)}</td>
-              <td style="${tdControleStyle()} text-align:center;">${escapeHtml(dados.valorTotal)}</td>
-              <td style="${tdControleStyle(false)} white-space:normal; line-height:1.25;">${escapeHtml(dados.observacoes)}</td>
-            </tr>
-            ${Array.from({ length: 13 })
+            ${Array.from({ length: 12 })
               .map(
                 () => `
                   <tr>
@@ -321,13 +314,25 @@ function gerarFichaHtml(dados: {
               )
               .join("")}
             <tr>
-              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; height:18mm; font-size:13px; font-weight:900; vertical-align:bottom; color:#000; padding:4px 6px;">
-                NF: ${escapeHtml(dados.nf)}
+              <td rowspan="3" style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333; height:24mm; font-size:13px; font-weight:900; vertical-align:bottom; color:#000; padding:4px 6px; text-align:left;">
+                NF:
               </td>
-              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333;"></td>
-              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333;"></td>
-              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333;"></td>
-              <td style="border:0.45px solid #333; border-top:none;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-bottom:0.45px solid #333;"></td>
+            </tr>
+            <tr>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; border-bottom:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-bottom:0.45px solid #333; height:7.4mm;"></td>
+            </tr>
+            <tr>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; border-right:0.45px solid #333; height:7.4mm;"></td>
+              <td style="border:0.45px solid #333; border-top:none; height:7.4mm;"></td>
             </tr>
           </tbody>
         </table>
@@ -361,7 +366,7 @@ function tdControleStyle(borderRight = true) {
 }
 
 function linhaVaziaStyle(borderRight = true) {
-  return `border:0.45px solid #333; border-top:none; ${borderRight ? "" : "border-right:none;"} height:8.5mm;`;
+  return `border:0.45px solid #333; border-top:none; ${borderRight ? "" : "border-right:none;"} height:7.4mm;`;
 }
 
 function escapeHtml(value: string) {
