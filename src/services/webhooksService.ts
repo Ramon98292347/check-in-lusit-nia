@@ -1,5 +1,23 @@
 import { supabase } from "@/integrations/supabase/client";
 
+async function registrarDocumentoGerado(payload: {
+  hospedagem_id: string;
+  tipo_documento: string;
+  canal: string;
+  status: string;
+  payload: any;
+  resposta_webhook: any;
+}) {
+  const { error } = await supabase.from("documentos_gerados").insert({
+    ...payload,
+    enviado_em: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.warn("Nao foi possivel registrar em documentos_gerados:", error.message);
+  }
+}
+
 async function buscarWebhookUrl(chaves: string[]) {
   const unicas = [...new Set(chaves.filter(Boolean))];
 
@@ -30,16 +48,15 @@ export async function enviarWebhook(opts: {
   let resposta: any = null;
 
   if (!url) {
-    await supabase.from("documentos_gerados").insert({
+    await registrarDocumentoGerado({
       hospedagem_id: opts.hospedagem_id,
       tipo_documento: opts.tipo_documento,
       canal: opts.canal,
       status: "sem_webhook",
       payload: opts.payload,
       resposta_webhook: { erro: "Webhook não configurado", chave_tentada: chave || opts.chave_webhook },
-      enviado_em: new Date().toISOString(),
     });
-    throw new Error("Webhook não configurado. Configure em Configurações.");
+    return;
   }
 
   try {
@@ -54,26 +71,25 @@ export async function enviarWebhook(opts: {
   } catch (e: any) {
     resposta = { erro: e.message, chave_utilizada: chave };
     status = "erro";
-    await supabase.from("documentos_gerados").insert({
+    await registrarDocumentoGerado({
       hospedagem_id: opts.hospedagem_id,
       tipo_documento: opts.tipo_documento,
       canal: opts.canal,
       status,
       payload: opts.payload,
       resposta_webhook: resposta,
-      enviado_em: new Date().toISOString(),
     });
-    throw e;
+    console.warn("Falha ao enviar webhook:", e.message);
+    return;
   }
 
-  await supabase.from("documentos_gerados").insert({
+  await registrarDocumentoGerado({
     hospedagem_id: opts.hospedagem_id,
     tipo_documento: opts.tipo_documento,
     canal: opts.canal,
     status,
     payload: opts.payload,
     resposta_webhook: resposta,
-    enviado_em: new Date().toISOString(),
   });
 }
 

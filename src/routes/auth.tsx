@@ -1,12 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
 
 const logoUrl = "/logo.png";
 const loginHeroUrl = "/imagem-tela-longi.png";
@@ -16,8 +13,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const [username, setUsername] = useState("");
-  const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
   const { user, signInLocal } = useAuth();
   const navigate = useNavigate();
@@ -26,11 +21,10 @@ function AuthPage() {
     if (user) navigate({ to: "/painel" });
   }, [user, navigate]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     setLoading(true);
     try {
-      await signInLocal({ username, password: senha });
+      await signInLocal();
       toast.success("Acesso liberado com sucesso.");
       navigate({ to: "/painel" });
     } catch (e: any) {
@@ -68,30 +62,14 @@ function AuthPage() {
             <p className="text-sm text-muted-foreground">Acesso interno da Pousada Lusitânia</p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={submit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="username">Usuario</Label>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Digite seu usuario"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="senha">Senha</Label>
-                <Input id="senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required minLength={6} />
+            <form onSubmit={(e) => { e.preventDefault(); void submit(); }} className="space-y-4">
+              <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Acesso livre para teste interno.</p>
+                <p className="mt-2">Toque em entrar para acessar o sistema.</p>
               </div>
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Entrar
               </Button>
-              <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Acessos internos liberados:</p>
-                <p className="mt-2">Recepcao: usuario `recepcao` e senha `recepcao123`</p>
-                <p>Vistoria: usuario `vistoria` e senha `vistoria123`</p>
-              </div>
               <div className="pt-2 text-center">
                 <Link to="/precadastro" className="text-xs text-muted-foreground hover:text-primary">
                   Sou hóspede — quero fazer o pré-cadastro
