@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -13,19 +14,60 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const [username, setUsername] = useState("recepcao");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstAccess, setFirstAccess] = useState(false);
+  const [checkingUser, setCheckingUser] = useState(true);
   const [loading, setLoading] = useState(false);
-  const { user, signInLocal } = useAuth();
+  const { user, signIn, ensureInitialPassword, hasInternalUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) navigate({ to: "/painel" });
   }, [user, navigate]);
 
+  useEffect(() => {
+    setPassword("");
+    setConfirmPassword("");
+    let active = true;
+
+    const verificar = async () => {
+      setCheckingUser(true);
+      try {
+        const existe = await hasInternalUser(username);
+        if (active) setFirstAccess(!existe);
+      } catch {
+        if (active) setFirstAccess(true);
+      } finally {
+        if (active) setCheckingUser(false);
+      }
+    };
+
+    void verificar();
+
+    return () => {
+      active = false;
+    };
+  }, [hasInternalUser, username]);
+
   const submit = async () => {
     setLoading(true);
     try {
-      await signInLocal();
-      toast.success("Acesso liberado com sucesso.");
+      if (firstAccess) {
+        if (!password || !confirmPassword) {
+          toast.error("Digite e confirme a nova senha.");
+          return;
+        }
+        if (password !== confirmPassword) {
+          toast.error("As senhas precisam ser iguais.");
+          return;
+        }
+        await ensureInitialPassword(username, password);
+      }
+
+      await signIn(username, password);
+      toast.success(firstAccess ? "Senha criada com sucesso." : "Acesso liberado com sucesso.");
       navigate({ to: "/painel" });
     } catch (e: any) {
       toast.error(e.message || "Erro ao autenticar");
@@ -63,11 +105,66 @@ function AuthPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => { e.preventDefault(); void submit(); }} className="space-y-4">
-              <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                <p>Toque em entrar para acessar o sistema.</p>
-              </div>
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                Entrar
+              {checkingUser ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                  Verificando acesso interno...
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                    <p>Escolha o usuário interno e use sua senha.</p>
+                    {firstAccess ? (
+                      <p className="mt-1">Crie a senha de acesso agora e depois use normalmente para entrar.</p>
+                    ) : (
+                      <p className="mt-1">Digite a senha do usuário selecionado para entrar no sistema.</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground" htmlFor="username">
+                      Usuário
+                    </label>
+                    <select
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="recepcao">recepcao</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground" htmlFor="password">
+                      Senha
+                    </label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete={firstAccess ? "new-password" : "current-password"}
+                      placeholder={firstAccess ? "Crie a senha" : "Digite a senha"}
+                    />
+                  </div>
+                  {firstAccess && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground" htmlFor="confirm-password">
+                        Confirmar senha
+                      </label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        placeholder="Repita a senha"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+              <Button type="submit" className="w-full" size="lg" disabled={loading || checkingUser}>
+                {firstAccess ? "Criar senha e entrar" : "Entrar"}
               </Button>
             </form>
           </CardContent>
